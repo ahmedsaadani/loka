@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Bonjour {{ recipient.first_name|default:recipient.email }},</p>
+<p>La réservation de <strong>{{ booking.property.title }}</strong> du {{ booking.start_date|date:"d/m/Y" }} au {{ booking.end_date|date:"d/m/Y" }} a été annulée.</p>
+{% if booking.cancellation_reason %}<p>Motif : {{ booking.cancellation_reason }}</p>{% endif %}
+<p>Si un remboursement s'applique, il apparaît dans le détail de la réservation.</p>
+<p><a href="{{ site_url }}/compte/reservations/{{ booking.public_id }}" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Voir le détail</a></p>
+{% endblock %}

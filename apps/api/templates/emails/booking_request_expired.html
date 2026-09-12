@@ -1,0 +1,7 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Bonjour {{ request.traveler.first_name|default:request.traveler.email }},</p>
+<p>L'hôte n'a pas répondu à temps à votre demande pour <strong>{{ request.property.title }}</strong> (du {{ request.start_date|date:"d/m/Y" }} au {{ request.end_date|date:"d/m/Y" }}). Elle a expiré.</p>
+<p>Vous pouvez refaire une demande ou consulter d'autres biens vérifiés.</p>
+<p><a href="{{ site_url }}/logement/{{ request.property.slug }}" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Revoir le bien</a></p>
+{% endblock %}

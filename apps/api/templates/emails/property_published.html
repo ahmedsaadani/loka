@@ -1,0 +1,6 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Bonjour {{ property.host.first_name|default:property.host.email }},</p>
+<p>Votre bien <strong>{{ property.title }}</strong> a été vérifié par notre équipe et est maintenant en ligne.</p>
+<p><a href="{{ site_url }}/logement/{{ property.slug }}" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Voir l'annonce</a></p>
+{% endblock %}

@@ -4,7 +4,7 @@
 COMPOSE := docker compose
 
 .PHONY: help dev down logs ps build api-shell web-shell migrate makemigrations seed \
-        lint lint-api lint-web test test-api test-web types clean
+        lint lint-api lint-web test test-api test-web e2e audit types clean
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -68,3 +68,11 @@ test-api: ## pytest
 
 test-web: ## vitest
 	$(COMPOSE) exec web npm run test -- --run
+
+e2e: ## Tests Playwright (stack démarrée et seedée)
+	$(COMPOSE) exec web npx playwright test
+
+audit: ## bandit + pip-audit + npm audit
+	$(COMPOSE) exec api bandit -q -r . -c pyproject.toml
+	$(COMPOSE) exec api pip-audit -r requirements/base.txt --strict
+	$(COMPOSE) exec web npm audit --omit=dev --audit-level=high

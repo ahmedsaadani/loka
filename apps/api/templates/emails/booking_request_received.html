@@ -1,0 +1,13 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Bonjour {{ host.first_name|default:host.email }},</p>
+<p>Vous avez reçu une demande de réservation pour <strong>{{ request.property.title }}</strong>.</p>
+<ul>
+<li>Du {{ request.start_date|date:"d/m/Y" }} au {{ request.end_date|date:"d/m/Y" }} ({{ request.quoted_units }} {% if request.rental_mode == "nightly" %}nuit(s){% else %}mois{% endif %})</li>
+<li>{{ request.guests }} voyageur(s)</li>
+<li>Total : {{ request.quoted_total }} TND, acompte : {{ request.quoted_deposit }} TND</li>
+</ul>
+{% if request.message %}<p>Message du voyageur : « {{ request.message }} »</p>{% endif %}
+<p>Vous avez jusqu'au {{ request.expires_at|date:"d/m/Y H:i" }} pour répondre.</p>
+<p><a href="{{ site_url }}/hote/demandes/{{ request.public_id }}" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Répondre à la demande</a></p>
+{% endblock %}

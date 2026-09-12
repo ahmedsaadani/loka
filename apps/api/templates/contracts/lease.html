@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Contrat de location - Loka</title>
+<style>
+  @page { size: A4; margin: 2cm; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #26272b; line-height: 1.5; }
+  h1 { font-size: 18pt; color: #b5502e; margin-bottom: 0; }
+  h2 { font-size: 12pt; margin-top: 18pt; border-bottom: 1px solid #ddd; padding-bottom: 4pt; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8pt; }
+  td { padding: 4pt 0; vertical-align: top; }
+  td:first-child { width: 40%; color: #6b6d73; }
+  .sign { margin-top: 36pt; display: flex; }
+  .sign div { width: 50%; }
+  .muted { color: #6b6d73; font-size: 9pt; }
+</style>
+</head>
+<body>
+<h1>Contrat de location {% if booking.rental_mode == "yearly" %}annuelle{% else %}mensuelle{% endif %}</h1>
+<p class="muted">Référence {{ booking.public_id }} · généré le {{ generated_at|date:"d/m/Y" }} via Loka</p>
+
+<h2>Parties</h2>
+<table>
+<tr><td>Bailleur</td><td>{{ host.full_name }} ({{ host.email }}{% if host.phone %}, {{ host.phone }}{% endif %})</td></tr>
+<tr><td>Locataire</td><td>{{ traveler.full_name }} ({{ traveler.email }}{% if traveler.phone %}, {{ traveler.phone }}{% endif %})</td></tr>
+</table>
+
+<h2>Bien loué</h2>
+<table>
+<tr><td>Désignation</td><td>{{ property.title }} · {{ property.get_property_type_display }}{% if property.rooms_label %} {{ property.rooms_label }}{% endif %}</td></tr>
+<tr><td>Adresse</td><td>{{ property.address_private }}, {{ property.city.name }}</td></tr>
+<tr><td>Surface</td><td>{% if property.surface_m2 %}{{ property.surface_m2 }} m²{% else %}non précisée{% endif %}</td></tr>
+<tr><td>Meublé</td><td>{{ property.furnished|yesno:"oui,non" }}</td></tr>
+</table>
+
+<h2>Durée et loyer</h2>
+<table>
+<tr><td>Période</td><td>du {{ booking.start_date|date:"d/m/Y" }} au {{ booking.end_date|date:"d/m/Y" }}</td></tr>
+<tr><td>Loyer total sur la période</td><td>{{ booking.total_amount }} TND</td></tr>
+<tr><td>Acompte versé via Loka</td><td>{{ booking.deposit_amount }} TND (déduit du premier loyer)</td></tr>
+<tr><td>Charges</td><td>{% if property.charges_included %}incluses{% else %}non incluses{% if property.monthly_charges_estimate %}, estimation {{ property.monthly_charges_estimate }} TND / mois{% endif %}{% endif %}</td></tr>
+<tr><td>Caution</td><td>{{ property.deposit_months }} mois de loyer, versée au bailleur à la remise des clés et restituée en fin de bail, déduction faite des éventuelles dégradations.</td></tr>
+</table>
+
+<h2>Conditions</h2>
+<p>Le locataire s'engage à occuper le bien paisiblement, à régler le loyer mensuellement d'avance et à restituer les lieux dans l'état constaté à l'entrée. Le bailleur garantit la jouissance paisible du bien et son état conforme à l'annonce vérifiée par Loka le {{ property.verified_at|date:"d/m/Y" }}.</p>
+<p>Loka intervient comme intermédiaire de mise en relation et de collecte de l'acompte. Le présent contrat lie le bailleur et le locataire ; il est régi par le droit tunisien.</p>
+
+<div class="sign">
+<div><p>Le bailleur</p><p class="muted">Signature</p></div>
+<div><p>Le locataire</p><p class="muted">Signature</p></div>
+</div>
+</body>
+</html>

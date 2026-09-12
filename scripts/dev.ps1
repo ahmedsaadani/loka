@@ -54,5 +54,11 @@ switch ($Target) {
   "test-api" { Compose exec api pytest }
   "test-web" { Compose exec web npm run test -- --run }
   "test" { & $PSCommandPath test-api; & $PSCommandPath test-web }
+  "e2e" { Compose exec web npx playwright test }
+  "audit" {
+    Compose exec api bandit -q -r . -c pyproject.toml
+    Compose exec api pip-audit -r requirements/base.txt --strict
+    Compose exec web npm audit --omit=dev --audit-level=high
+  }
   default { Write-Error "Cible inconnue : $Target"; exit 1 }
 }

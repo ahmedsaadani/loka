@@ -1,0 +1,6 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Bonjour {{ user.first_name|default:"" }},</p>
+<p>Bienvenue sur Loka. Tous les biens que vous verrez ont été visités et validés par notre équipe.</p>
+<p><a href="{{ site_url }}" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Découvrir les biens</a></p>
+{% endblock %}

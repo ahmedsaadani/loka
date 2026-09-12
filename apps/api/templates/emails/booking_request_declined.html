@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Bonjour {{ request.traveler.first_name|default:request.traveler.email }},</p>
+<p>Votre demande pour <strong>{{ request.property.title }}</strong> (du {{ request.start_date|date:"d/m/Y" }} au {{ request.end_date|date:"d/m/Y" }}) n'a pas pu être acceptée.</p>
+{% if request.decline_reason %}<p>Motif : {{ request.decline_reason }}</p>{% endif %}
+<p>D'autres biens vérifiés sont disponibles dans le même quartier.</p>
+<p><a href="{{ site_url }}/recherche?city={{ request.property.city.slug }}" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Voir d'autres biens</a></p>
+{% endblock %}

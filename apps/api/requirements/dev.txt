@@ -1,0 +1,13 @@
+-r base.txt
+ruff>=0.12,<1
+mypy>=1.16,<2
+django-stubs[compatible-mypy]>=5.2,<6
+djangorestframework-stubs[compatible-mypy]>=3.16,<4
+types-python-dateutil>=2.9
+pytest>=8.4,<10
+pytest-django>=4.11,<5
+pytest-cov>=6,<8
+factory_boy>=3.3.3,<4
+Faker>=37,<40
+bandit>=1.8,<2
+pip-audit>=2.9,<3

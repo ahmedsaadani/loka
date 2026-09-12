@@ -45,6 +45,19 @@ lint:web:
     - npm run format:check
     - npm run typecheck
 
+security:api:
+  extends: .api-base
+  stage: lint
+  script:
+    - bandit -q -r . -c pyproject.toml
+    - pip-audit -r requirements/base.txt --strict
+
+security:web:
+  extends: .web-base
+  stage: lint
+  script:
+    - npm audit --omit=dev --audit-level=high
+
 test:api:
   extends: .api-base
   stage: test

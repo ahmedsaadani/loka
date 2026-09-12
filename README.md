@@ -44,6 +44,10 @@ make seed       # villes, quartiers, 25 biens de démo, comptes de test
 | Schéma OpenAPI | http://localhost:8000/api/v1/schema/ |
 | Admin Django | http://localhost:8000/admin/ |
 | Console MinIO | http://localhost:9001 (`loka` / `loka-minio-secret`) |
+| PostgreSQL (outils locaux) | `localhost:15432`, base `loka`, `loka` / `loka` |
+| Redis (outils locaux) | `localhost:16379` |
+
+Les ports 15432 et 16379 évitent les conflits avec un PostgreSQL ou un Redis déjà installés sur la machine.
 
 ### Comptes de test (après `make seed`)
 
@@ -65,7 +69,10 @@ make seed       # villes, quartiers, 25 biens de démo, comptes de test
 | `make types` | Régénère les types TS depuis le schéma OpenAPI |
 | `make lint` | ruff, mypy, eslint, prettier, tsc |
 | `make test` | pytest + vitest |
+| `make audit` | bandit, pip-audit, npm audit |
 | `make build` | Images de prod |
+
+Tous les tests de l'API tournent avec `config.settings.test` (stockage en mémoire, Celery en mode eager, emails en mémoire) contre la base PostGIS du conteneur.
 
 ## Arborescence
 

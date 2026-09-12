@@ -1,0 +1,7 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Bonjour {{ booking.traveler.first_name|default:booking.traveler.email }},</p>
+<p>Bonne nouvelle : votre demande pour <strong>{{ booking.property.title }}</strong> (du {{ booking.start_date|date:"d/m/Y" }} au {{ booking.end_date|date:"d/m/Y" }}) a été acceptée.</p>
+<p>Pour confirmer la réservation, réglez l'acompte de <strong>{{ booking.deposit_amount }} TND</strong>.</p>
+<p><a href="{{ site_url }}/compte/reservations/{{ booking.public_id }}" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Payer l'acompte</a></p>
+{% endblock %}

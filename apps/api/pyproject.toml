@@ -1,0 +1,64 @@
+[project]
+name = "loka-api"
+version = "0.1.0"
+description = "API Loka - location d'hebergements verifies en Tunisie"
+requires-python = ">=3.12"
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = ["*/migrations/*", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "DJ", "S", "T20"]
+ignore = [
+  "S101",   # assert : utilise dans les tests
+  "S105", "S106",  # faux positifs sur les mots de passe de test / noms de champs
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S", "B011", "E501"]
+"**/factories.py" = ["S"]
+"config/settings/*.py" = ["S"]
+"core/management/commands/seed.py" = ["S311", "T20", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "core", "accounts", "geo", "listings", "availability", "bookings", "leads", "reviews", "notifications"]
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+ignore_missing_imports = true
+exclude = ["migrations/", "\\.venv/", "/tests/"]
+
+[[tool.mypy.overrides]]
+module = ["*.migrations.*", "*.tests.*", "*.factories", "conftest"]
+disallow_untyped_defs = false
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+addopts = "-q --ds=config.settings.test --reuse-db --strict-markers -p no:cacheprovider"
+filterwarnings = ["error::DeprecationWarning:django", "ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["."]
+omit = ["*/migrations/*", "*/tests/*", "conftest.py", "manage.py", "config/*"]
+
+# ---------------------------------------------------------------- bandit
+[tool.bandit]
+exclude_dirs = ["tests", "migrations", ".venv"]
+skips = ["B101"]

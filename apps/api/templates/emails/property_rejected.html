@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Bonjour {{ property.host.first_name|default:property.host.email }},</p>
+<p>Votre bien <strong>{{ property.title }}</strong> n'a pas pu être validé.</p>
+{% if property.rejection_reason %}<p>Motif : {{ property.rejection_reason }}</p>{% endif %}
+<p>Vous pouvez corriger l'annonce et la soumettre à nouveau.</p>
+<p><a href="{{ site_url }}/hote/biens/{{ property.public_id }}" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Modifier le bien</a></p>
+{% endblock %}
