@@ -1,0 +1,34 @@
+# Environnement
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+apps/api/media/
+apps/api/staticfiles/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/lib/api/schema.d.ts
+
+# Docker
+.docker-data/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
