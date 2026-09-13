@@ -58,6 +58,20 @@ Les ports 15432 et 16379 évitent les conflits avec un PostgreSQL ou un Redis d�
 | Hôte | host@loka.tn | loka-host |
 | Voyageur | traveler@loka.tn | loka-traveler |
 
+### Front plus réactif sous Windows
+
+Le serveur de dev Next.js est lent quand il tourne dans Docker sous Windows (montage de fichiers). Pour un front rapide, lancez-le directement sur la machine (Node 22+), l'API restant dans Docker :
+
+```bash
+docker compose stop web
+```
+
+```bash
+cd apps/web && npm install && npm run dev
+```
+
+Le fichier `apps/web/.env.local` (non versionné) pointe vers `http://localhost:18000/api/v1`. Pour une démo sans aucune latence de compilation : `npm run build && npm run start`.
+
 ## Commandes
 
 | Commande | Rôle |
