@@ -34,7 +34,7 @@ class PartySerializer(serializers.Serializer[Any]):
 
 class BookingRequestCreateSerializer(serializers.Serializer[Any]):
     property = serializers.SlugRelatedField(
-        slug_field="slug", queryset=Property.objects.published()
+        slug_field="slug", queryset=Property.objects.publicly_visible()
     )
     rental_mode = serializers.ChoiceField(choices=RentalMode.choices)
     start_date = serializers.DateField()

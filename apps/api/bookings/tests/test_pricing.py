@@ -98,20 +98,29 @@ class TestMonthly:
 
 
 class TestYearly:
-    plan = PlanData("yearly", D("700"))
+    # ADR 0007 : le prix annuel est saisi par l'hôte (ici 8 400 DT pour 12 mois).
+    plan = PlanData("yearly", D("8400"))
 
     def test_twelve_months(self):
         q = compute_quote(self.plan, date(2026, 9, 1), date(2027, 9, 1), deposit_months=1)
         assert q.units == 12
+        assert q.unit_label == "an"
+        assert q.unit_price == D("8400.00")
+        assert q.monthly_equivalent == D("700.00")
         assert q.subtotal == D("8400.00")
         assert q.fee_rate == D("0.03")
         assert q.fee == D("252.00")
         assert q.fee_payer == "host"
         assert q.total == D("8400.00")
-        assert q.deposit == D("700.00")
+        assert q.deposit == D("700.00")  # un douzième
         assert q.host_payout == D("8148.00")
         assert q.host_payout_from_deposit == D("448.00")
         assert q.security_deposit == D("700.00")
+
+    def test_monthly_equivalent_rounding(self):
+        q = compute_quote(PlanData("yearly", D("10000")), date(2026, 1, 1), date(2027, 1, 1))
+        assert q.monthly_equivalent == D("833.33")
+        assert q.deposit == D("833.33")
 
     def test_not_twelve_months(self):
         with pytest.raises(PricingError) as exc:

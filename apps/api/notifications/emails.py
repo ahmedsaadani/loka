@@ -121,6 +121,15 @@ def send_property_rejected(prop: Property) -> None:
     )
 
 
+def send_property_changes_under_review(prop: Property, changed: list[str]) -> None:
+    _enqueue(
+        to=prop.host.email,
+        subject=f"Modifications de « {prop.title} » en cours de vérification",
+        template="property_changes_under_review",
+        context={"property": prop, "changed": changed},
+    )
+
+
 def send_password_reset(user: User, reset_url: str) -> None:
     _enqueue(
         to=user.email,

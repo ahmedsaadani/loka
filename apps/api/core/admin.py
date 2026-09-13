@@ -3,7 +3,7 @@ from typing import Any
 from django.contrib import admin
 from django.http import HttpRequest
 
-from core.models import SensitiveAccessLog, StatusLog
+from core.models import SensitiveAccessLog, SiteContent, StatusLog
 
 
 @admin.register(StatusLog)
@@ -25,3 +25,14 @@ class SensitiveAccessLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request: HttpRequest, obj: Any = None) -> bool:
         return False
+
+
+@admin.register(SiteContent)
+class SiteContentAdmin(admin.ModelAdmin):
+    list_display = ("key", "title", "is_published", "updated_at", "needs_writing")
+    search_fields = ("key", "title", "body")
+    readonly_fields = ("created_at", "updated_at")
+
+    @admin.display(boolean=True, description="À rédiger")
+    def needs_writing(self, obj: SiteContent) -> bool:
+        return "[À RÉDIGER]" in obj.title or "[À RÉDIGER]" in obj.body

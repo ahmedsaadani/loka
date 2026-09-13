@@ -55,7 +55,6 @@ from listings.serializers import (
     UnavailableRangeSerializer,
 )
 
-EDITABLE_STATUSES = {PropertyStatus.DRAFT, PropertyStatus.REJECTED}
 MAX_CALENDAR_DAYS = 400
 
 
@@ -190,14 +189,9 @@ class HostPropertyViewSet(viewsets.ModelViewSet[Property]):
 
     def partial_update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         prop = self.get_object()
-        if prop.status not in EDITABLE_STATUSES:
-            raise ConflictError(
-                "Ce bien n'est pas modifiable dans son état actuel. Remettez-le en brouillon.",
-                code="not_editable",
-            )
-        serializer = PropertyWriteSerializer(prop, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        # ADR 0007 : modifiable dans tous les états ; les champs descriptifs d'un bien publié
+        # le renvoient en validation (l'ancienne version reste visible).
+        services.update_property(prop, by=current_user(request), data=dict(request.data.items()))
         prop.refresh_from_db()
         return Response(PropertyHostSerializer(prop).data)
 
@@ -257,6 +251,7 @@ class HostPropertyViewSet(viewsets.ModelViewSet[Property]):
             prop,
             upload=serializer.validated_data["image"],
             alt_text=serializer.validated_data["alt_text"],
+            by=current_user(request),
         )
         return Response(PhotoSerializer(photo).data, status=status.HTTP_201_CREATED)
 
@@ -279,7 +274,7 @@ class HostPropertyViewSet(viewsets.ModelViewSet[Property]):
     ) -> Response:
         prop = self.get_object()
         photo = get_object_or_404(PropertyPhoto, property=prop, public_id=photo_id)
-        services.delete_photo(photo)
+        services.delete_photo(photo, by=current_user(request))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # --- tarifs

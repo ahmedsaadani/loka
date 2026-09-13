@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import dj_database_url
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -305,7 +306,19 @@ CELERY_BEAT_SCHEDULE = {
         "task": "bookings.tasks.advance_booking_statuses",
         "schedule": 3600.0,
     },
+    # Sauvegarde chiffrée quotidienne (CELERY_TIMEZONE = Africa/Tunis).
+    "backup-database": {
+        "task": "core.tasks.backup_database",
+        "schedule": crontab(hour=3, minute=0),
+    },
 }
+
+# ------------------------------------------------------------------ sauvegardes (docs/backups.md)
+# Clé Fernet ; vide = sauvegardes désactivées. Génération :
+# python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+BACKUP_ENCRYPTION_KEY = env("BACKUP_ENCRYPTION_KEY")
+BACKUP_RETENTION_DAYS = 7
+BACKUP_RETENTION_WEEKS = 4
 
 # ------------------------------------------------------------------ email
 EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
@@ -329,19 +342,31 @@ PLATFORM_FEE_PAYER: dict[str, str] = {
     "monthly": "host",
     "yearly": "host",
 }
-# Acompte (montant payé sur la plateforme pour confirmer) :
-# - nuitée : 30 % du total (option prudente, voir ADR 0005)
-# - mensuel / annuel : un mois de loyer
+# Acompte (montant payé sur la plateforme pour confirmer), ADR 0007 :
+# - nuitée : 30 % du total voyageur
+# - mensuel : un mois de loyer ; annuel : un douzième du prix annuel
 BOOKING_DEPOSIT_RATE_NIGHTLY = Decimal("0.30")
 # Expiration d'une demande sans réponse de l'hôte, et rappel envoyé avant.
 BOOKING_REQUEST_TTL_HOURS = 48
 BOOKING_REQUEST_REMINDER_HOURS = 24
 # Taux EUR indicatif (1 TND -> EUR). Affichage seulement, jamais utilisé pour un paiement.
 EUR_RATE = Decimal("0.295")
-# Annulation par le voyageur : délai avant le début pour un remboursement de l'acompte (ADR 0005)
-BOOKING_FREE_CANCELLATION_DAYS = 7
+# Annulation par le voyageur : jours avant l'arrivée pour un remboursement intégral de l'acompte
+# (ADR 0007). Au-delà, l'acompte reste acquis à l'hôte. L'hôte ou le staff rembourse toujours.
+BOOKING_FREE_CANCELLATION_DAYS: dict[str, int] = {"nightly": 7, "monthly": 30, "yearly": 30}
 
 PAYMENT_PROVIDER = env("PAYMENT_PROVIDER", "mock")
+
+# Konnect (voir docs/payments.md, ADR 0008). Sandbox par défaut : jamais de vrai débit par erreur.
+KONNECT_API_KEY = env("KONNECT_API_KEY")
+KONNECT_WALLET_ID = env("KONNECT_WALLET_ID")
+KONNECT_SANDBOX = env_bool("KONNECT_SANDBOX", True)
+# Doit être l'URL PUBLIQUE de l'API (joignable par Konnect), pas celle du front :
+# ex. https://api.loka.tn/api/v1/bookings/webhooks/konnect/
+KONNECT_WEBHOOK_URL = env("KONNECT_WEBHOOK_URL", f"{SITE_URL}/api/v1/bookings/webhooks/konnect/")
+# Jeton aléatoire ajouté en query string du webhook : les pings sans jeton sont rejetés (403).
+KONNECT_WEBHOOK_TOKEN = env("KONNECT_WEBHOOK_TOKEN")
+KONNECT_CHECKOUT_LIFESPAN_MINUTES = env_int("KONNECT_CHECKOUT_LIFESPAN_MINUTES", 30)
 
 # Revalidation ISR du front Next.js après publication / changement de prix (vide = désactivé).
 REVALIDATE_URL = env("REVALIDATE_URL", "")
@@ -349,6 +374,25 @@ REVALIDATE_SECRET = env("REVALIDATE_SECRET", "")
 # Lien de réinitialisation de mot de passe (page front), valable PASSWORD_RESET_TIMEOUT secondes.
 PASSWORD_RESET_URL = env("PASSWORD_RESET_URL", f"{SITE_URL}/reinitialisation")
 PASSWORD_RESET_TIMEOUT = 60 * 60
+
+# ------------------------------------------------------------------ Sentry
+# Désactivé si SENTRY_DSN est vide.
+SENTRY_DSN = env("SENTRY_DSN")
+SENTRY_ENVIRONMENT = env("SENTRY_ENVIRONMENT", ENVIRONMENT)
+SENTRY_RELEASE = env("SENTRY_RELEASE", env("IMAGE_TAG", "dev"))
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=SENTRY_ENVIRONMENT,
+        release=SENTRY_RELEASE,
+        integrations=[DjangoIntegration(), CeleryIntegration()],
+        traces_sample_rate=float(env("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+        send_default_pii=False,  # jamais d'email ni d'IP dans les événements
+    )
 
 # ------------------------------------------------------------------ logging
 LOGGING = {

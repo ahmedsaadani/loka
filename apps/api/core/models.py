@@ -72,3 +72,20 @@ class SensitiveAccessLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.kind} {self.target_type}#{self.target_id} by {self.actor_id}"
+
+
+class SiteContent(TimeStampedModel):
+    """Contenu éditorial géré dans l'admin (CGU, confidentialité, contact...). Markdown simple."""
+
+    key = models.SlugField(max_length=40, unique=True, help_text="cgu, confidentialite, contact")
+    title = models.CharField(max_length=160)
+    body = models.TextField(help_text="Markdown : titres (##), paragraphes, listes (-), gras (**).")
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["key"]
+        verbose_name = "contenu du site"
+        verbose_name_plural = "contenus du site"
+
+    def __str__(self) -> str:
+        return f"{self.key} : {self.title}"

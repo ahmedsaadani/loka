@@ -73,6 +73,30 @@ class StaffStatsView(APIView):
         )
 
 
+class SiteContentView(APIView):
+    """Page éditoriale publiée (CGU, confidentialité, contact), en Markdown brut."""
+
+    permission_classes = [AllowAny]
+    authentication_classes: list[type] = []
+
+    @extend_schema(responses={200: {"type": "object"}})
+    def get(self, request: Request, key: str) -> Response:
+        from django.shortcuts import get_object_or_404
+
+        from core.models import SiteContent
+
+        content = get_object_or_404(SiteContent, key=key, is_published=True)
+        return Response(
+            {
+                "key": content.key,
+                "title": content.title,
+                "body": content.body,
+                "updated_at": content.updated_at,
+                "needs_writing": "[À RÉDIGER]" in content.body or "[À RÉDIGER]" in content.title,
+            }
+        )
+
+
 class HealthView(APIView):
     permission_classes = [AllowAny]
     authentication_classes: list[type] = []

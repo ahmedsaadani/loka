@@ -1,7 +1,11 @@
-"""Services métier des biens : cycle de vie, photos, plans tarifaires. Voir ADR 0003."""
+"""Services métier des biens : cycle de vie, modification, photos, plans tarifaires.
+
+Voir ADR 0003 (services) et ADR 0007 (modification d'un bien publié, identité requise).
+"""
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -25,6 +29,44 @@ audit_logger = logging.getLogger("loka.audit")
 
 MIN_PHOTOS_TO_SUBMIT = 3
 
+# Champs modifiables sans nouvelle validation (ADR 0007) : conditions tarifaires et règles.
+LIVE_FIELDS = frozenset(
+    {
+        "house_rules",
+        "charges_included",
+        "monthly_charges_estimate",
+        "deposit_months",
+        "min_lease_months",
+    }
+)
+# Tout autre champ décrit le bien : sa modification sur un bien publié déclenche une revue.
+REVIEW_FIELDS = frozenset(
+    {
+        "title",
+        "description",
+        "property_type",
+        "rooms_label",
+        "bedrooms",
+        "bathrooms",
+        "surface_m2",
+        "floor",
+        "has_elevator",
+        "furnished",
+        "max_guests",
+        "city",
+        "neighborhood",
+        "address_private",
+        "location",
+        "location_precision",
+        "distance_notes",
+        "amenities",
+    }
+)
+# Statuts depuis lesquels une modification descriptive renvoie en validation.
+REVIEW_TRIGGER_STATUSES = frozenset({PropertyStatus.PUBLISHED, PropertyStatus.PAUSED})
+# Statuts pendant lesquels l'ancienne version publiée reste visible (si instantané présent).
+SNAPSHOT_STATUSES = frozenset({PropertyStatus.PENDING_REVIEW, PropertyStatus.NEEDS_VISIT})
+
 
 def revalidate_property_pages(prop: Property) -> None:
     """Régénère la fiche, la ville, le quartier et l'accueil côté front."""
@@ -41,6 +83,11 @@ class PropertyNotReady(ValidationError):
     """Le bien ne remplit pas les conditions pour être soumis / publié."""
 
 
+def host_identity_verified(prop: Property) -> bool:
+    """Drapeau posé uniquement par accounts.services.approve_identity_document."""
+    return bool(prop.host.is_identity_verified)
+
+
 def readiness_errors(prop: Property) -> dict[str, str]:
     errors: dict[str, str] = {}
     if len(prop.title.strip()) < 10:
@@ -55,7 +102,42 @@ def readiness_errors(prop: Property) -> dict[str, str]:
         errors["photos"] = f"Ajoutez au moins {MIN_PHOTOS_TO_SUBMIT} photos."
     if not prop.pricing_plans.filter(is_active=True).exists():
         errors["pricing_plans"] = "Ajoutez au moins un plan tarifaire."
+    if not host_identity_verified(prop):
+        errors["identity"] = (
+            "Votre pièce d'identité doit être vérifiée par Loka avant la publication. "
+            "Envoyez-la depuis Mon compte > Identité."
+        )
     return errors
+
+
+# ----------------------------------------------------------------- instantané publié
+
+
+def build_published_snapshot(prop: Property) -> dict[str, Any]:
+    """Représentation publique figée (carte + fiche) servie pendant une revue."""
+    from listings.serializers import PropertyCardSerializer, PropertyDetailSerializer
+
+    context = {"force_live": True}
+    fresh = Property.objects.for_public_any_status().get(pk=prop.pk)
+    data = {
+        "card": PropertyCardSerializer(fresh, context=context).data,
+        "detail": PropertyDetailSerializer(fresh, context=context).data,
+        "captured_at": timezone.now().isoformat(),
+    }
+    return json.loads(json.dumps(data, default=str))
+
+
+def ensure_snapshot(prop: Property) -> None:
+    """Garantit qu'un bien publié ou en pause a un instantané de sa version en ligne."""
+    if prop.status in REVIEW_TRIGGER_STATUSES and prop.published_snapshot is None:
+        prop.published_snapshot = build_published_snapshot(prop)
+        prop.save(update_fields=["published_snapshot", "updated_at"])
+
+
+def _clear_snapshot(prop: Property) -> None:
+    if prop.published_snapshot is not None:
+        prop.published_snapshot = None
+        prop.save(update_fields=["published_snapshot", "updated_at"])
 
 
 # ----------------------------------------------------------------- transitions hôte
@@ -72,8 +154,12 @@ def submit_for_review(prop: Property, *, by: User) -> Property:
 
 @transaction.atomic
 def withdraw_to_draft(prop: Property, *, by: User) -> Property:
-    """L'hôte (ou le staff) remet le bien en brouillon depuis pending_review, paused ou rejected."""
+    """L'hôte (ou le staff) remet le bien en brouillon : il disparaît du site."""
+    was_visible = prop.is_serving_snapshot
     transition(prop, PropertyStatus.DRAFT, actor=by)
+    _clear_snapshot(prop)
+    if was_visible:
+        revalidate_property_pages(prop)
     return prop
 
 
@@ -89,6 +175,63 @@ def resume(prop: Property, *, by: User) -> Property:
     transition(prop, PropertyStatus.PUBLISHED, actor=by)
     revalidate_property_pages(prop)
     return prop
+
+
+def _send_to_review_after_change(prop: Property, *, by: User, changed: list[str]) -> None:
+    """Un bien publié ou en pause vient d'être modifié sur un champ descriptif."""
+    from notifications import emails
+
+    transition(
+        prop,
+        PropertyStatus.PENDING_REVIEW,
+        actor=by,
+        note=f"Modification à valider : {', '.join(sorted(changed))}",
+    )
+    audit_logger.info(
+        "property_changes_under_review pk=%s by=%s fields=%s", prop.pk, by.pk, changed
+    )
+    emails.send_property_changes_under_review(prop, changed)
+
+
+@transaction.atomic
+def update_property(prop: Property, *, by: User, data: dict[str, Any]) -> Property:
+    """
+    Applique une modification de l'hôte (données brutes du client, validées ici).
+    Sur un bien publié ou en pause, un champ de REVIEW_FIELDS renvoie le bien en validation
+    en conservant l'ancienne version visible (instantané). Les champs LIVE_FIELDS
+    s'appliquent immédiatement.
+    """
+    from listings.serializers import PropertyWriteSerializer
+
+    ensure_snapshot(prop)
+    before = _snapshot_fields(prop, data.keys())
+    serializer = PropertyWriteSerializer(prop, data=data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    prop.refresh_from_db()
+    after = _snapshot_fields(prop, data.keys())
+    changed = [key for key in data if before.get(key) != after.get(key)]
+    review_changes = [key for key in changed if key in REVIEW_FIELDS]
+
+    if prop.status in REVIEW_TRIGGER_STATUSES and review_changes:
+        _send_to_review_after_change(prop, by=by, changed=review_changes)
+    elif prop.status == PropertyStatus.PUBLISHED and changed:
+        revalidate_property_pages(prop)
+    return prop
+
+
+def _snapshot_fields(prop: Property, keys: Any) -> dict[str, Any]:
+    values: dict[str, Any] = {}
+    for key in keys:
+        if key == "amenities":
+            values[key] = sorted(prop.amenities.values_list("code", flat=True))
+        elif key == "location":
+            values[key] = (prop.location.x, prop.location.y) if prop.location else None
+        elif key in {"city", "neighborhood"}:
+            values[key] = getattr(prop, f"{key}_id")
+        else:
+            values[key] = getattr(prop, key, None)
+    return values
 
 
 # ----------------------------------------------------------------- transitions équipe
@@ -121,7 +264,7 @@ def publish(
     condition_grade: str,
     notes: str = "",
 ) -> Property:
-    """Publication par l'équipe après visite : fige la vérification."""
+    """Publication par l'équipe après visite : fige la vérification et l'instantané public."""
     errors = readiness_errors(prop)
     if errors:
         raise PropertyNotReady(errors)
@@ -141,6 +284,8 @@ def publish(
             "published_at": prop.published_at or now,
         },
     )
+    prop.published_snapshot = build_published_snapshot(prop)
+    prop.save(update_fields=["published_snapshot", "updated_at"])
     audit_logger.info("property_published pk=%s by=%s level=%s", prop.pk, by.pk, verification_level)
     revalidate_property_pages(prop)
     return prop
@@ -148,6 +293,7 @@ def publish(
 
 @transaction.atomic
 def reject(prop: Property, *, by: User, reason: str) -> Property:
+    was_visible = prop.is_serving_snapshot
     transition(
         prop,
         PropertyStatus.REJECTED,
@@ -155,6 +301,9 @@ def reject(prop: Property, *, by: User, reason: str) -> Property:
         note=reason,
         extra_fields={"rejection_reason": reason},
     )
+    _clear_snapshot(prop)
+    if was_visible:
+        revalidate_property_pages(prop)
     return prop
 
 
@@ -168,7 +317,10 @@ def add_photo(
     upload: UploadedFile,
     alt_text: str = "",
     taken_by_team: bool = False,
+    by: User | None = None,
 ) -> PropertyPhoto:
+    if by is not None and not taken_by_team:
+        ensure_snapshot(prop)
     content = validate_and_reencode_image(upload)
     with Image.open(content) as img:
         width, height = img.size
@@ -190,6 +342,8 @@ def add_photo(
 
     enqueue(generate_photo_variants, photo.pk)
     photo.refresh_from_db(fields=["variants"])
+    if by is not None and not taken_by_team and prop.status in REVIEW_TRIGGER_STATUSES:
+        _send_to_review_after_change(prop, by=by, changed=["photos"])
     return photo
 
 
@@ -205,11 +359,15 @@ def reorder_photos(prop: Property, ordered_public_ids: list[str]) -> None:
         photo.order = index
         photo.is_cover = index == 1
     PropertyPhoto.objects.bulk_update(photos.values(), ["order", "is_cover"])
+    if prop.status == PropertyStatus.PUBLISHED:
+        revalidate_property_pages(prop)
 
 
 @transaction.atomic
-def delete_photo(photo: PropertyPhoto) -> None:
+def delete_photo(photo: PropertyPhoto, *, by: User | None = None) -> None:
     prop = photo.property
+    if by is not None and not by.is_loka_staff:
+        ensure_snapshot(prop)
     was_cover = photo.is_cover
     photo.original.delete(save=False)
     photo.delete()
@@ -218,6 +376,8 @@ def delete_photo(photo: PropertyPhoto) -> None:
         if first:
             first.is_cover = True
             first.save(update_fields=["is_cover"])
+    if by is not None and not by.is_loka_staff and prop.status in REVIEW_TRIGGER_STATUSES:
+        _send_to_review_after_change(prop, by=by, changed=["photos"])
 
 
 # ----------------------------------------------------------------- plans tarifaires

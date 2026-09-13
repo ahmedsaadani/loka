@@ -74,6 +74,13 @@ erDiagram
     string location_precision "exact|approximate"
     json distance_notes
     json house_rules
+    json published_snapshot "version publique figée (ADR 0007)"
+  }
+  SiteContent {
+    string key UK "cgu|confidentialite|contact"
+    string title
+    text body "Markdown"
+    bool is_published
   }
   PropertyPhoto {
     uuid public_id
@@ -138,12 +145,14 @@ stateDiagram-v2
   needs_visit --> rejected
   needs_visit --> pending_review
   published --> paused : hôte met en pause
+  published --> pending_review : modification descriptive (ancienne version visible)
+  paused --> pending_review : modification descriptive
   paused --> published : hôte réactive
   paused --> draft : hôte modifie (re-validation)
   rejected --> draft : hôte corrige
 ```
 
-Un bien n'est modifiable (PATCH) qu'en `draft` ou `rejected`. Toute modification d'un bien publié passe par pause → brouillon → nouvelle soumission : la vérification Loka reste fiable.
+ADR 0007 : un bien est modifiable dans tous les états. Sur un bien publié ou en pause, les champs descriptifs et les photos renvoient en `pending_review` tandis que `published_snapshot` (version publique figée à la publication) reste servie par l'API publique ; prix, calendrier, règles et conditions s'appliquent sans revalidation. La soumission exige une pièce d'identité approuvée pour l'hôte.
 
 ### BookingRequest
 

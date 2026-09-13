@@ -1,0 +1,7 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Bonjour {{ property.host.first_name|default:property.host.email }},</p>
+<p>Vous avez modifié <strong>{{ property.title }}</strong> ({{ changed|join:", " }}). Ces changements décrivent le bien : notre équipe les vérifie avant de les publier.</p>
+<p>En attendant, <strong>votre annonce reste en ligne dans sa version précédente</strong> et reste réservable. Vous serez prévenu dès la validation.</p>
+<p><a href="{{ site_url }}/hote/biens/{{ property.public_id }}" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Voir mon bien</a></p>
+{% endblock %}

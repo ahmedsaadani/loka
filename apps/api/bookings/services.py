@@ -28,7 +28,7 @@ from bookings.payments.base import PaymentResult, get_payment_provider
 from bookings.pricing import PlanData, PricingError, Quote, compute_quote
 from core.exceptions import ConflictError, DomainError
 from core.state import InvalidTransition, can_transition, transition
-from listings.models import PricingPlan, Property, PropertyStatus
+from listings.models import PricingPlan, Property
 from notifications import emails
 
 audit_logger = logging.getLogger("loka.audit")
@@ -83,7 +83,7 @@ def create_booking_request(
     guests: int,
     message: str = "",
 ) -> BookingRequest:
-    if prop.status != PropertyStatus.PUBLISHED:
+    if not prop.is_publicly_visible:
         raise DomainError("Ce bien n'est pas disponible à la réservation.", code="not_published")
     if prop.host_id == traveler.pk:
         raise DomainError("Vous ne pouvez pas réserver votre propre bien.", code="own_property")
@@ -283,13 +283,15 @@ def refund_amount_for_cancellation(
     booking: Booking, *, by: User, today: date | None = None
 ) -> Decimal:
     """
-    Politique prudente (ADR 0005) : l'hôte qui annule rembourse tout ; le voyageur récupère
-    l'acompte s'il annule au moins BOOKING_FREE_CANCELLATION_DAYS jours avant le début.
+    ADR 0007 : l'hôte ou le staff qui annule rembourse tout ; le voyageur récupère l'acompte
+    s'il annule au moins BOOKING_FREE_CANCELLATION_DAYS[mode] jours avant l'arrivée
+    (7 jours en nuitée, 30 jours en mensuel et annuel).
     """
     today = today or timezone.localdate()
     if by.pk == booking.host_id or by.is_loka_staff:
         return booking.deposit_amount
-    if (booking.start_date - today).days >= settings.BOOKING_FREE_CANCELLATION_DAYS:
+    free_days = settings.BOOKING_FREE_CANCELLATION_DAYS[booking.rental_mode]
+    if (booking.start_date - today).days >= free_days:
         return booking.deposit_amount
     return Decimal("0.00")
 
@@ -307,25 +309,64 @@ def cancel_booking(booking: Booking, *, by: User, reason: str = "") -> Booking:
         extra_fields={"cancellation_reason": reason, "cancelled_by": by},
     )
     availability_services.release_booking(booking)
+    if by.pk == booking.host_id or by.is_loka_staff:
+        audit_logger.info(
+            "booking_cancelled_by_host booking=%s actor=%s role=%s refund=%s reason=%s",
+            booking.pk,
+            by.pk,
+            by.role,
+            refund,
+            reason,
+        )
     if refund > 0:
         deposit = booking.payments.filter(
             kind=PaymentKind.DEPOSIT, status=PaymentStatus.SUCCEEDED
         ).first()
         if deposit:
-            result = get_payment_provider().refund(provider_ref=deposit.provider_ref, amount=refund)
-            Payment.objects.create(
-                booking=booking,
-                provider=deposit.provider,
-                provider_ref=result.provider_ref,
-                amount=refund,
-                kind=PaymentKind.REFUND,
-                status=PaymentStatus.SUCCEEDED if result.succeeded else PaymentStatus.FAILED,
-                raw_payload=result.raw,
-            )
-            deposit.status = PaymentStatus.REFUNDED
-            deposit.save(update_fields=["status", "updated_at"])
+            _refund_deposit(booking, deposit, refund)
     emails.send_booking_cancelled(booking)
     return booking
+
+
+def _refund_deposit(booking: Booking, deposit: Payment, amount: Decimal) -> Payment:
+    """
+    Rembourse via le prestataire. Si celui-ci ne sait pas rembourser par API (Konnect au MVP),
+    une ligne REFUND reste `initiated` et l'équipe traite le remboursement à la main
+    (voir docs/payments.md) ; l'annulation n'est jamais bloquée.
+    """
+    provider = get_payment_provider()
+    try:
+        result = provider.refund(provider_ref=deposit.provider_ref, amount=amount)
+    except NotImplementedError as exc:
+        audit_logger.warning(
+            "refund_manual_required booking=%s payment=%s amount=%s provider=%s",
+            booking.pk,
+            deposit.pk,
+            amount,
+            deposit.provider,
+        )
+        return Payment.objects.create(
+            booking=booking,
+            provider=deposit.provider,
+            provider_ref=f"{deposit.provider_ref}_refund_manual",
+            amount=amount,
+            kind=PaymentKind.REFUND,
+            status=PaymentStatus.INITIATED,
+            raw_payload={"manual": True, "reason": str(exc)},
+        )
+    payment = Payment.objects.create(
+        booking=booking,
+        provider=deposit.provider,
+        provider_ref=result.provider_ref,
+        amount=amount,
+        kind=PaymentKind.REFUND,
+        status=PaymentStatus.SUCCEEDED if result.succeeded else PaymentStatus.FAILED,
+        raw_payload=result.raw,
+    )
+    if result.succeeded:
+        deposit.status = PaymentStatus.REFUNDED
+        deposit.save(update_fields=["status", "updated_at"])
+    return payment
 
 
 @transaction.atomic

@@ -15,6 +15,7 @@ from listings.factories import (
     PropertyFactory,
     PropertyPhotoFactory,
     make_published_property,
+    verify_host_identity,
 )
 from listings.models import Property, PropertyStatus
 
@@ -32,8 +33,10 @@ ALL_TRANSITIONS = {
     (S.NEEDS_VISIT, S.REJECTED),
     (S.NEEDS_VISIT, S.PENDING_REVIEW),
     (S.PUBLISHED, S.PAUSED),
+    (S.PUBLISHED, S.PENDING_REVIEW),
     (S.PAUSED, S.PUBLISHED),
     (S.PAUSED, S.DRAFT),
+    (S.PAUSED, S.PENDING_REVIEW),
     (S.REJECTED, S.DRAFT),
 }
 
@@ -42,6 +45,7 @@ def ready_property(**kwargs) -> Property:
     prop = PropertyFactory(**kwargs)
     prop.description = "x" * 100
     prop.save()
+    verify_host_identity(prop.host)
     for i in range(3):
         PropertyPhotoFactory(property=prop, order=i + 1, is_cover=i == 0)
     PricingPlanFactory(property=prop)
@@ -62,7 +66,11 @@ class TestTransitionTable:
             S.PENDING_REVIEW: lambda: (
                 services.submit_for_review(prop, by=staff)
                 if source == S.DRAFT
-                else services.back_to_review(prop, by=staff)
+                else (
+                    services.update_property(prop, by=staff, data={"title": "Titre modifié ok"})
+                    if source in {S.PUBLISHED, S.PAUSED}
+                    else services.back_to_review(prop, by=staff)
+                )
             ),
             S.NEEDS_VISIT: lambda: services.schedule_visit(prop, by=staff, visit_at=timezone.now()),
             S.PUBLISHED: lambda: (

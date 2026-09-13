@@ -6,7 +6,7 @@ from typing import Any
 from django.contrib.gis.geos import Point
 from rest_framework import serializers
 
-from bookings.pricing import to_eur
+from bookings.pricing import monthly_equivalent, to_eur
 from geo.models import City, Neighborhood
 from listings import services
 from listings.models import (
@@ -75,14 +75,27 @@ class PhotoSerializer(serializers.ModelSerializer[PropertyPhoto]):
 
 class PricingPlanSerializer(serializers.ModelSerializer[PricingPlan]):
     price_eur = serializers.SerializerMethodField()
+    monthly_equivalent = serializers.SerializerMethodField()
 
     class Meta:
         model = PricingPlan
-        fields = ("rental_mode", "price", "price_eur", "min_duration", "max_duration", "is_active")
+        fields = (
+            "rental_mode",
+            "price",
+            "price_eur",
+            "monthly_equivalent",
+            "min_duration",
+            "max_duration",
+            "is_active",
+        )
         read_only_fields = fields
 
     def get_price_eur(self, obj: PricingPlan) -> Decimal:
         return to_eur(obj.price)
+
+    def get_monthly_equivalent(self, obj: PricingPlan) -> Decimal | None:
+        """Plan annuel : prix / 12, indicatif (ADR 0007)."""
+        return monthly_equivalent(obj.price) if obj.rental_mode == "yearly" else None
 
 
 class PricingPlanWriteSerializer(serializers.Serializer[Any]):
@@ -122,7 +135,22 @@ class HostPublicSerializer(serializers.Serializer[Any]):
 # ----------------------------------------------------------------- public
 
 
-class PropertyCardSerializer(serializers.ModelSerializer[Property]):
+class SnapshotAwareMixin:
+    """Pendant une revue de modifications, le public voit l'instantané publié (ADR 0007)."""
+
+    snapshot_key = "card"
+
+    def to_representation(self, instance: Property) -> dict[str, Any]:
+        context = getattr(self, "context", {})
+        if not context.get("force_live") and instance.is_serving_snapshot:
+            snapshot = instance.published_snapshot or {}
+            data = snapshot.get(self.snapshot_key)
+            if isinstance(data, dict):
+                return dict(data)
+        return super().to_representation(instance)  # type: ignore[misc]  # mixin sur ModelSerializer
+
+
+class PropertyCardSerializer(SnapshotAwareMixin, serializers.ModelSerializer[Property]):
     city = CityRefSerializer(read_only=True)
     neighborhood = NeighborhoodRefSerializer(read_only=True)
     cover_photo = serializers.SerializerMethodField()
@@ -171,6 +199,8 @@ class PropertyCardSerializer(serializers.ModelSerializer[Property]):
 
 
 class PropertyDetailSerializer(PropertyCardSerializer):
+    snapshot_key = "detail"
+
     photos = serializers.SerializerMethodField()
     amenities = AmenitySerializer(many=True, read_only=True)
     host = serializers.SerializerMethodField()
@@ -223,6 +253,7 @@ class QuoteSerializer(serializers.Serializer[Any]):
     units = serializers.IntegerField()
     unit_label = serializers.CharField()
     unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    monthly_equivalent = serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True)
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2)
     fee_rate = serializers.DecimalField(max_digits=4, decimal_places=2)
     fee = serializers.DecimalField(max_digits=10, decimal_places=2)
@@ -249,6 +280,8 @@ class PropertyHostSerializer(serializers.ModelSerializer[Property]):
     amenities = AmenitySerializer(many=True, read_only=True)
     location = LatLngField(read_only=True)
     readiness_errors = serializers.SerializerMethodField()
+    is_publicly_visible = serializers.BooleanField(read_only=True)
+    is_serving_snapshot = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Property
@@ -289,6 +322,8 @@ class PropertyHostSerializer(serializers.ModelSerializer[Property]):
             "pricing_plans",
             "amenities",
             "readiness_errors",
+            "is_publicly_visible",
+            "is_serving_snapshot",
             "published_at",
             "created_at",
             "updated_at",

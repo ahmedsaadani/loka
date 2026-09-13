@@ -14,6 +14,7 @@ from typing import Any
 
 from django.contrib.gis.geos import Point
 from django.core.files.base import ContentFile
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
@@ -48,11 +49,7 @@ GEO: dict[str, dict[str, Any]] = {
         "gov": "Ariana",
         "centroid": (10.1647, 36.8625),
         "featured": True,
-        "intro": (
-            "Ariana attire étudiants et jeunes actifs grâce à ses campus (ESPRIT, ISG, Université de "
-            "Carthage) et à sa proximité avec le Lac et le centre de Tunis. Les quartiers de Ghazela, "
-            "Ennasr et Menzah offrent un large choix d'appartements meublés."
-        ),
+        "intro": "[À RÉDIGER] Texte d'introduction de la page ville, à rédiger dans l'admin (Géographie > Villes).",
         "neighborhoods": {
             "Ghazela": (10.1875, 36.8975),
             "Ennasr": (10.1560, 36.8560),
@@ -64,10 +61,7 @@ GEO: dict[str, dict[str, Any]] = {
         "gov": "Tunis",
         "centroid": (10.1815, 36.8065),
         "featured": True,
-        "intro": (
-            "Capitale et centre économique, Tunis concentre les locations moyenne durée pour expatriés "
-            "et professionnels, du Lac 2 à La Marsa en passant par le Bardo et Mutuelleville."
-        ),
+        "intro": "[À RÉDIGER] Texte d'introduction de la page ville, à rédiger dans l'admin (Géographie > Villes).",
         "neighborhoods": {
             "Lac 2": (10.2560, 36.8390),
             "La Marsa": (10.3250, 36.8780),
@@ -79,10 +73,7 @@ GEO: dict[str, dict[str, Any]] = {
         "gov": "Sousse",
         "centroid": (10.6400, 35.8250),
         "featured": True,
-        "intro": (
-            "Sousse combine location saisonnière en bord de mer et logements étudiants près des "
-            "facultés. Sahloul et Kantaoui sont les quartiers les plus demandés."
-        ),
+        "intro": "[À RÉDIGER] Texte d'introduction de la page ville, à rédiger dans l'admin (Géographie > Villes).",
         "neighborhoods": {
             "Sahloul": (10.5950, 35.8400),
             "Kantaoui": (10.5990, 35.8900),
@@ -206,6 +197,8 @@ class Command(BaseCommand):
             not options["no_photos"],
         )
         self._seed_leads(users["staff@loka.tn"])
+        self._seed_site_content()
+        call_command("rebuild_snapshots")
         self.stdout.write(self.style.SUCCESS(f"Seed terminé : {count} biens publiés."))
 
     def _seed_accounts(self) -> dict[str, User]:
@@ -268,7 +261,7 @@ class Command(BaseCommand):
                         "centroid": Point(lng, lat, srid=4326),
                         "seo_title": f"Location {name}, {city_name} : appartements vérifiés | Loka",
                         "seo_description": f"Appartements meublés à {name} ({city_name}) visités et validés par Loka.",
-                        "intro_text": f"{name} est l'un des quartiers les plus recherchés de {city_name}.",
+                        "intro_text": f"[À RÉDIGER] Présentation du quartier {name} ({city_name}), à rédiger dans l'admin.",
                     },
                 )
             cities[city_name] = city
@@ -425,4 +418,25 @@ class Command(BaseCommand):
                 city=city,
                 phone=phone,
                 assigned_to=staff,
+            )
+
+    def _seed_site_content(self) -> None:
+        from core.models import SiteContent
+
+        pages = {
+            "cgu": "Conditions d'utilisation",
+            "confidentialite": "Politique de confidentialité",
+            "contact": "Contact",
+        }
+        for key, title in pages.items():
+            SiteContent.objects.get_or_create(
+                key=key,
+                defaults={
+                    "title": title,
+                    "body": (
+                        f"## {title}\n\n[À RÉDIGER] Ce texte est un espace réservé. "
+                        "Rédigez le contenu définitif dans l'admin (Socle > Contenus du site) "
+                        "et faites-le valider par un conseil juridique avant la mise en production."
+                    ),
+                },
             )

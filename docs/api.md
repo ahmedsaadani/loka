@@ -18,6 +18,7 @@ Le front génère ses types depuis le schéma (`make types` → `apps/web/lib/ap
 | Méthode | Chemin | Rôle |
 |---|---|---|
 | GET | `/health/` | Santé API + base |
+| GET | `/content/{key}/` | Page éditoriale (cgu, confidentialite, contact) en Markdown, gérée dans l'admin |
 | GET | `/geo/cities/?is_featured=true` | Villes avec nombre de biens et prix moyens |
 | GET | `/geo/cities/{slug}/` | Ville + quartiers + textes SEO |
 | GET | `/geo/neighborhoods/?city__slug=` | Quartiers |
@@ -94,5 +95,13 @@ Le front génère ses types depuis le schéma (`make types` → `apps/web/lib/ap
 |---|---|---|
 | POST | `/bookings/webhooks/mock/` | Prestataire mock : `{provider_ref, outcome, amount, currency, signature}` (HMAC-SHA256 de `ref:outcome` avec `SECRET_KEY`) |
 | GET | `/bookings/mock/sign/{provider_ref}/` | Dev : signatures pour la page `/paiement/mock` (voyageur concerné ou staff) |
+| GET / POST | `/bookings/webhooks/konnect/?payment_ref=&token=` | Konnect : jeton `KONNECT_WEBHOOK_TOKEN` obligatoire (403), état relu via l'API Konnect → `{status}` ; voir [payments.md](payments.md) |
 
-Les prestataires réels (Konnect, ClicToPay, Flouci) implémenteront `bookings.payments.base.PaymentProvider` et un endpoint de webhook dédié.
+Les autres prestataires (ClicToPay, Flouci) implémenteront `bookings.payments.base.PaymentProvider` et un endpoint de webhook dédié.
+
+## Règles Phase 6 (ADR 0007)
+
+- `PricingPlan.price` en mode `yearly` est le **prix annuel** ; l'API renvoie `monthly_equivalent` (prix / 12, indicatif) sur les plans et dans les devis.
+- Un bien publié ou en pause est modifiable via `PATCH /listings/host/properties/{id}/` dans tous les états. Les champs descriptifs (titre, description, type, pièces, surface, capacité, adresse, position, équipements, distances) et l'ajout / suppression de photos renvoient le bien en `pending_review` ; l'API publique continue de servir la version publiée (`is_serving_snapshot`, `is_publicly_visible` exposés au propriétaire). Prix, calendrier, règles et conditions s'appliquent immédiatement.
+- `POST .../submit/` renvoie `400` avec `errors.identity` tant que la pièce d'identité de l'hôte n'est pas approuvée.
+- Annulation : remboursement intégral de l'acompte si annulation ≥ 7 jours avant l'arrivée (nuitée) ou ≥ 30 jours (mensuel, annuel) ; toujours intégral si l'hôte ou le staff annule. Un prestataire sans API de remboursement laisse un `Payment` `refund` en `initiated` (traitement manuel).

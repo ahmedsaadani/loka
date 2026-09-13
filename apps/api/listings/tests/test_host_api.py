@@ -81,7 +81,7 @@ class TestCrud:
         assert body["address_private"] == "3 rue des Lilas"
         assert body["location"] == {"lat": 36.8975, "lng": 10.1875}
         assert [a["code"] for a in body["amenities"]] == ["wifi"]
-        assert set(body["readiness_errors"]) == {"photos", "pricing_plans"}
+        assert set(body["readiness_errors"]) == {"photos", "pricing_plans", "identity"}
         prop = Property.objects.get(public_id=body["public_id"])
         assert prop.host == host
         assert prop.slug
@@ -107,11 +107,23 @@ class TestCrud:
         assert response.status_code == 200
         assert response.json()["title"] == "Nouveau titre valide"
 
-    def test_patch_published_is_conflict(self, as_user, host):
+    def test_patch_published_descriptive_field_sends_to_review(self, as_user, host):
         prop = make_published_property(host=host)
         response = as_user(host).patch(url(prop), {"title": "Nouveau titre valide"}, format="json")
-        assert response.status_code == 409
-        assert response.json()["code"] == "not_editable"
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "pending_review"
+        assert body["is_serving_snapshot"] is True
+        assert body["is_publicly_visible"] is True
+
+    def test_patch_published_live_field_keeps_published(self, as_user, host):
+        prop = make_published_property(host=host)
+        response = as_user(host).patch(
+            url(prop), {"house_rules": {"pets": True}, "deposit_months": 2}, format="json"
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "published"
+        assert response.json()["deposit_months"] == 2
 
     def test_cannot_set_status_or_host_via_patch(self, as_user, host, other_host):
         prop = PropertyFactory(host=host)

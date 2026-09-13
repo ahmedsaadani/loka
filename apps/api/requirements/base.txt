@@ -13,3 +13,5 @@ Pillow>=12.3,<13
 python-slugify>=8.0.4,<9
 python-dateutil>=2.9,<3
 weasyprint>=70,<71
+sentry-sdk[django,celery]>=2.20,<3
+cryptography>=43,<46

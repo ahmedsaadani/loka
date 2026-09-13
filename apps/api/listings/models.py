@@ -79,12 +79,26 @@ class PropertyQuerySet(models.QuerySet["Property"]):
     def published(self) -> PropertyQuerySet:
         return self.filter(status=PropertyStatus.PUBLISHED)
 
-    def for_public(self) -> PropertyQuerySet:
-        return (
-            self.published()
-            .select_related("city", "city__governorate", "neighborhood", "host")
-            .prefetch_related("photos", "pricing_plans", "amenities")
+    def publicly_visible(self) -> PropertyQuerySet:
+        """Publié, ou en revue de modifications avec une version publiée à montrer (ADR 0007)."""
+        return self.filter(
+            models.Q(status=PropertyStatus.PUBLISHED)
+            | models.Q(
+                status__in=[PropertyStatus.PENDING_REVIEW, PropertyStatus.NEEDS_VISIT],
+                published_snapshot__isnull=False,
+            )
         )
+
+    def with_public_relations(self) -> PropertyQuerySet:
+        return self.select_related(
+            "city", "city__governorate", "neighborhood", "host", "host__host_profile"
+        ).prefetch_related("photos", "pricing_plans", "amenities")
+
+    def for_public(self) -> PropertyQuerySet:
+        return self.publicly_visible().with_public_relations()
+
+    def for_public_any_status(self) -> PropertyQuerySet:
+        return self.with_public_relations()
 
 
 class Property(PublicIdModel, TimeStampedModel):
@@ -103,8 +117,11 @@ class Property(PublicIdModel, TimeStampedModel):
         PropertyStatus.NEEDS_VISIT: frozenset(
             {PropertyStatus.PUBLISHED, PropertyStatus.REJECTED, PropertyStatus.PENDING_REVIEW}
         ),
-        PropertyStatus.PUBLISHED: frozenset({PropertyStatus.PAUSED}),
-        PropertyStatus.PAUSED: frozenset({PropertyStatus.PUBLISHED, PropertyStatus.DRAFT}),
+        # ADR 0007 : une modification descriptive d'un bien publié ou en pause le renvoie en revue.
+        PropertyStatus.PUBLISHED: frozenset({PropertyStatus.PAUSED, PropertyStatus.PENDING_REVIEW}),
+        PropertyStatus.PAUSED: frozenset(
+            {PropertyStatus.PUBLISHED, PropertyStatus.DRAFT, PropertyStatus.PENDING_REVIEW}
+        ),
         PropertyStatus.REJECTED: frozenset({PropertyStatus.DRAFT}),
     }
 
@@ -182,6 +199,8 @@ class Property(PublicIdModel, TimeStampedModel):
     meta_description = models.CharField(max_length=320, blank=True)
 
     published_at = models.DateTimeField(null=True, blank=True)
+    # ADR 0007 : version publique figée à la publication, servie pendant une revue de modifications.
+    published_snapshot = models.JSONField(null=True, blank=True, editable=False)
 
     amenities: models.ManyToManyField[Amenity, PropertyAmenity] = models.ManyToManyField(
         Amenity, through="PropertyAmenity", blank=True
@@ -217,6 +236,18 @@ class Property(PublicIdModel, TimeStampedModel):
     @property
     def is_published(self) -> bool:
         return self.status == PropertyStatus.PUBLISHED
+
+    @builtins.property
+    def is_serving_snapshot(self) -> bool:
+        """En revue de modifications : le public voit l'instantané de la version publiée."""
+        return (
+            self.status in {PropertyStatus.PENDING_REVIEW, PropertyStatus.NEEDS_VISIT}
+            and self.published_snapshot is not None
+        )
+
+    @builtins.property
+    def is_publicly_visible(self) -> bool:
+        return self.is_published or self.is_serving_snapshot
 
     def mark_published(self) -> None:
         if self.published_at is None:
@@ -268,12 +299,15 @@ class PropertyPhoto(PublicIdModel, TimeStampedModel):
 
 
 class PricingPlan(TimeStampedModel):
-    """Un plan par mode. Prix en TND : par nuit (nightly) ou par mois (monthly, yearly)."""
+    """Un plan par mode. Prix en TND : par nuit (nightly), par mois (monthly), par an (yearly)."""
 
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="pricing_plans")
     rental_mode = models.CharField(max_length=8, choices=RentalMode.choices)
     price = models.DecimalField(
-        max_digits=10, decimal_places=2, validators=[MinValueValidator(1)], help_text="TND"
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(1)],
+        help_text="TND par nuit, par mois, ou par an pour le plan annuel (ADR 0007)",
     )
     min_duration = models.PositiveSmallIntegerField(
         default=1, help_text="Nuits (nightly) ou mois (monthly). Ignoré pour yearly (12)."

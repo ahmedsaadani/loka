@@ -109,9 +109,21 @@ class PropertyPhotoFactory(factory.django.DjangoModelFactory[PropertyPhoto]):
     alt_text = "Séjour lumineux"
 
 
+def verify_host_identity(host: Any) -> None:
+    """ADR 0007 : un hôte doit avoir une pièce d'identité approuvée pour publier."""
+    from accounts.factories import IdentityDocumentFactory
+    from accounts.models import IdentityDocumentStatus
+
+    if not host.identity_documents.filter(status=IdentityDocumentStatus.APPROVED).exists():
+        IdentityDocumentFactory(user=host, status=IdentityDocumentStatus.APPROVED)
+        host.is_identity_verified = True
+        host.save(update_fields=["is_identity_verified"])
+
+
 def make_published_property(**kwargs: Any) -> Property:
-    """Bien publié complet : 3 photos, plan mensuel + nuitée."""
+    """Bien publié complet : 3 photos, plan mensuel + nuitée, hôte à l'identité vérifiée."""
     prop = cast(Property, PropertyFactory(published=True, **kwargs))
+    verify_host_identity(prop.host)
     for index in range(3):
         PropertyPhotoFactory(property=prop, order=index + 1, is_cover=index == 0)
     PricingPlanFactory(property=prop, rental_mode=RentalMode.MONTHLY, price=Decimal("850.00"))
