@@ -10,7 +10,6 @@ import {
   Users,
 } from "lucide-react";
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -20,6 +19,7 @@ import { BookingBox } from "@/components/listing/BookingBox";
 import { ConditionBadge } from "@/components/listing/ConditionBadge";
 import { Gallery } from "@/components/listing/Gallery";
 import { MobileBookingBar } from "@/components/listing/MobileBookingBar";
+import { PropertyMapLazy } from "@/components/listing/PropertyMapLazy";
 import { PricingTabs } from "@/components/listing/PricingTabs";
 import { PropertyCard } from "@/components/listing/PropertyCard";
 import { VerifiedBadge } from "@/components/listing/VerifiedBadge";
@@ -29,13 +29,6 @@ import type { Paginated, PropertyCard as PropertyCardData, PropertyDetail } from
 import { t } from "@/lib/i18n";
 import { accommodationJsonLd, breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 import { CONDITION_LABEL, formatDate, formatTnd, PROPERTY_TYPE_LABEL } from "@/lib/utils";
-
-const PropertyMap = dynamic(
-  () => import("@/components/listing/PropertyMap").then((m) => m.PropertyMap),
-  {
-    loading: () => <div className="h-72 w-full animate-pulse rounded-xl bg-muted" />,
-  },
-);
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -308,7 +301,7 @@ export default async function PropertyPage({ params }: { params: Promise<Params>
               <h2 id="localisation" className="mb-3 text-lg">
                 {t.listing.location}
               </h2>
-              <PropertyMap
+              <PropertyMapLazy
                 location={property.location}
                 approximate={property.location_precision === "approximate"}
                 className="h-72 w-full overflow-hidden rounded-xl border"

@@ -1,13 +1,13 @@
 "use client";
 
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { CalendarEditor } from "@/components/host/CalendarEditor";
-import { LocationPicker } from "@/components/host/LocationPicker";
 import { PhotoUploader } from "@/components/host/PhotoUploader";
 import { PricingEditor } from "@/components/host/PricingEditor";
 import { PropertyStatusBadge } from "@/components/host/PropertyStatusBadge";
@@ -37,6 +37,11 @@ import type {
   PropertyWrite,
 } from "@/lib/api/types";
 import { cn, PROPERTY_TYPE_LABEL } from "@/lib/utils";
+
+const LocationPicker = dynamic(
+  () => import("@/components/host/LocationPicker").then((m) => m.LocationPicker),
+  { ssr: false, loading: () => <div className="h-72 w-full animate-pulse rounded-lg bg-muted" /> },
+);
 
 const STEPS = [
   { key: "infos", label: "Informations" },
