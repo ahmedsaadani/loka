@@ -92,6 +92,28 @@ docs/         architecture, modèle de données, API, SEO, ADR
 - Données sensibles (adresse exacte, documents d'identité, contrats) : bucket `private`, URLs signées de 5 min, accès loggé. Jamais dans une réponse publique.
 - Images jamais servies en original : variantes WebP `thumb`, `card`, `gallery`, `og` générées par Celery.
 
+## Tests
+
+| Commande | Contenu |
+|---|---|
+| `make test-api` | 313 tests pytest (services, transitions, API par rôle, uploads, paiement), couverture 93 % |
+| `make test-web` | vitest : composants, utilitaires, contrat de types vs schéma OpenAPI |
+| `make e2e` | Playwright (stack démarrée et seedée) : recherche → fiche → demande, création d'un bien, validation équipe, gardes de rôle |
+| `make audit` | bandit, pip-audit, npm audit |
+
+En local sans Docker pour le front : `cd apps/web && npx playwright install chromium && npx playwright test --project=desktop` avec l'API sur `localhost:18000`.
+
+## Espaces
+
+| URL | Rôle |
+|---|---|
+| `/` `/location/…` `/logement/…` `/recherche` | Public |
+| `/connexion` `/inscription` `/hote/inscription` | Auth |
+| `/compte` | Voyageur : profil, demandes, réservations (acompte, adresse après confirmation), identité |
+| `/hote` | Propriétaire : biens (assistant), demandes, réservations |
+| `/admin` | Équipe : validation, réservations, identités, leads, statistiques |
+| `/paiement/mock` | Simulateur de paiement (dev uniquement) |
+
 ## Avancement
 
-Voir [CHANGELOG.md](CHANGELOG.md).
+Voir [CHANGELOG.md](CHANGELOG.md) et les rapports de phase dans [docs/reports/](docs/reports/).

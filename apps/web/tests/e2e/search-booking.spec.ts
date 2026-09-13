@@ -44,16 +44,27 @@ test.describe("Parcours voyageur : recherche → fiche → demande de réservati
     await expect(page.getByText("Vérifié par Loka").first()).toBeVisible();
     const listingUrl = page.url();
 
+    // Sur mobile, le bloc de réservation est replié dans un <details> sticky.
+    const openBookingBox = async () => {
+      const opener = page.getByTestId("mobile-booking-open");
+      if (await opener.isVisible()) {
+        if ((await opener.getAttribute("aria-expanded")) !== "true") await opener.click();
+      }
+    };
+    const visibleBox = () => page.getByTestId("booking-box").locator("visible=true").first();
+
     // Non connecté : le bloc réservation renvoie vers la connexion
-    const loginLink = page
-      .getByRole("link", { name: /Connectez-vous pour envoyer une demande/ })
-      .first();
+    await openBookingBox();
+    const loginLink = visibleBox().getByRole("link", {
+      name: /Connectez-vous pour envoyer une demande/,
+    });
     await expect(loginLink).toBeVisible();
     await login(page, ACCOUNTS.traveler, new URL(listingUrl).pathname);
     await expect(page).toHaveURL(listingUrl);
 
     // Demande de réservation (nuitée, dates lointaines pour éviter les blocs)
-    const box = page.getByTestId("booking-box").first();
+    await openBookingBox();
+    const box = visibleBox();
     await box.getByTestId("booking-mode-nightly").click();
     await box.getByTestId("booking-start").fill(isoDate(120));
     await box.getByTestId("booking-end").fill(isoDate(124));

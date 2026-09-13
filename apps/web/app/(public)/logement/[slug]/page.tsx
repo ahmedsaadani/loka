@@ -19,6 +19,7 @@ import { AvailabilityCalendar } from "@/components/listing/AvailabilityCalendar"
 import { BookingBox } from "@/components/listing/BookingBox";
 import { ConditionBadge } from "@/components/listing/ConditionBadge";
 import { Gallery } from "@/components/listing/Gallery";
+import { MobileBookingBar } from "@/components/listing/MobileBookingBar";
 import { PricingTabs } from "@/components/listing/PricingTabs";
 import { PropertyCard } from "@/components/listing/PropertyCard";
 import { VerifiedBadge } from "@/components/listing/VerifiedBadge";
@@ -370,31 +371,11 @@ export default async function PropertyPage({ params }: { params: Promise<Params>
         </section>
       )}
 
-      {/* Bloc de réservation mobile : sticky en bas */}
-      <div className="sticky bottom-0 z-30 -mx-4 mt-8 border-t bg-background/95 p-3 backdrop-blur lg:hidden">
-        <details className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between">
-            <span className="text-lg font-semibold">
-              {property.pricing_plans[0]
-                ? `${formatTnd(property.pricing_plans[0].price)} / ${property.pricing_plans[0].rental_mode === "nightly" ? "nuit" : "mois"}`
-                : ""}
-            </span>
-            <span className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground group-open:hidden">
-              {t.listing.book}
-            </span>
-            <span className="hidden text-sm text-muted-foreground group-open:inline">
-              {t.common.close}
-            </span>
-          </summary>
-          <div className="mt-3 max-h-[70vh] overflow-y-auto">
-            <BookingBox
-              slug={property.slug}
-              plans={property.pricing_plans}
-              maxGuests={property.max_guests}
-            />
-          </div>
-        </details>
-      </div>
+      <MobileBookingBar
+        slug={property.slug}
+        plans={property.pricing_plans}
+        maxGuests={property.max_guests}
+      />
 
       <JsonLd data={[accommodationJsonLd(property), breadcrumbJsonLd(crumbs)]} />
     </article>

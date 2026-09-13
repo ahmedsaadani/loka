@@ -58,6 +58,10 @@ lib/seo/       metadata, JSON-LD, breadcrumbs
 lib/i18n/      dictionnaires (FR au MVP)
 ```
 
+## Revalidation ISR
+
+Les pages ville, quartier et fiche sont générées à la demande (ISR, `revalidate` 5 à 10 min) et régénérées immédiatement quand l'API publie, met en pause ou re-tarife un bien : `listings.services.revalidate_property_pages` → tâche Celery `notifications.tasks.revalidate_front` → `POST /api/revalidate` (secret partagé `REVALIDATE_SECRET`). Le build de production ne contacte jamais l'API.
+
 ## Stockage des fichiers
 
 | Bucket | Contenu | Accès |
