@@ -4,6 +4,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versionnage s
 
 ## [Unreleased]
 
+### Phase 6 — Corrections métier, industrialisation, production
+
+- ADR 0007 : prix annuel propre (`monthly_equivalent` indicatif), acomptes par mode, annulation 7 / 30 jours, modification d'un bien publié avec instantané public pendant la revue, identité vérifiée obligatoire pour publier, email « modifications en cours de vérification ».
+- Instantané public `Property.published_snapshot`, commande `rebuild_snapshots`, contenus éditoriaux `SiteContent` (CGU, confidentialité, contact) gérés dans l'admin et servis via `/content/{key}/`, vérification système des textes `[À RÉDIGER]` (`manage.py check --deploy`, alerte Sentry au démarrage en prod).
+- CSP par nonce (middleware Next), fond de carte MapTiler avec repli OSM en dev, Sentry API et front (désactivés sans DSN), carte de la fiche chargée à l'affichage, `scripts/lighthouse.sh`.
+- Sauvegardes PostgreSQL chiffrées (Fernet) vers le bucket privé, rotation 7 jours / 4 semaines, tâche beat quotidienne, commandes `backup_db` / `restore_db` / `list_backups`, procédure documentée (`docs/backups.md`).
+- Prestataire de paiement Konnect (`PAYMENT_PROVIDER=konnect`, sandbox, webhook vérifié par relecture de l'API, réconciliation `check_payment`), remboursements manuels tracés.
+- Job CI Playwright desktop + mobile avec vidéos en cas d'échec ; `infra/deploy/` (compose prod, Nginx HTTPS Let's Encrypt, `deploy.sh` idempotent avec rollback, job `deploy:prod`) et `docs/deploy.md` (SMTP, SPF/DKIM/DMARC, checklist).
+
 ### Phase 1 — Socle
 
 - Monorepo, docker compose (postgres/postgis, redis, minio, api, worker, web), Dockerfiles multi-stage.

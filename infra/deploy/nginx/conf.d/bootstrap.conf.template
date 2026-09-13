@@ -1,0 +1,21 @@
+# Configuration nginx d'amorçage : HTTP uniquement, utilisée par init-letsencrypt.sh
+# tant qu'aucun certificat n'existe (NGINX_TEMPLATE=bootstrap.conf.template).
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOMAIN} www.${DOMAIN};
+
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+    }
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type "text/plain";
+    }
+
+    location / {
+        return 503 "Loka : mise en service en cours.\n";
+    }
+}

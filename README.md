@@ -70,7 +70,7 @@ docker compose stop web
 cd apps/web && npm install && npm run dev
 ```
 
-Le fichier `apps/web/.env.local` (non versionné) pointe vers `http://localhost:18000/api/v1`. Pour une démo sans aucune latence de compilation : `npm run build && npm run start`.
+Le fichier `apps/web/.env.local` (non versionné) pointe vers `http://localhost:18000/api/v1`. Pour une démo sans aucune latence de compilation, sans écraser le `.next` du serveur de dev : `NEXT_DIST_DIR=.next-prod npm run build && NEXT_DIST_DIR=.next-prod npx next start -p 3002`.
 
 ## Commandes
 
@@ -127,6 +127,20 @@ En local sans Docker pour le front : `cd apps/web && npx playwright install chro
 | `/hote` | Propriétaire : biens (assistant), demandes, réservations |
 | `/admin` | Équipe : validation, réservations, identités, leads, statistiques |
 | `/paiement/mock` | Simulateur de paiement (dev uniquement) |
+
+## Déploiement
+
+Production sur un VPS unique avec Docker Compose (nginx + Let's Encrypt, web, api, worker, beat, PostGIS, Redis, MinIO ou S3 externe). Les fichiers sont dans [infra/deploy/](infra/deploy/) (`docker-compose.prod.yml`, `deploy.sh`, `init-letsencrypt.sh`, `.env.prod.example`) ; le job GitLab `deploy:prod` (manuel) lance `deploy.sh` en SSH. Procédure complète, DNS emails (SPF/DKIM/DMARC), rollback et checklist : [docs/deploy.md](docs/deploy.md).
+
+## Production et exploitation
+
+- Déploiement VPS : [docs/deploy.md](docs/deploy.md) (`infra/deploy/`, `deploy.sh`, Nginx + Let's Encrypt).
+- Sauvegardes chiffrées et restauration : [docs/backups.md](docs/backups.md) (`make backup`, `make restore name=...`).
+- Paiement Konnect : [docs/payments.md](docs/payments.md) (mock par défaut en dev).
+- Sécurité front : CSP par nonce (`apps/web/middleware.ts`), voir ADR 0009. Cartes : clé `NEXT_PUBLIC_MAPTILER_KEY` obligatoire en production.
+- Supervision : `SENTRY_DSN` (API) et `NEXT_PUBLIC_SENTRY_DSN` (front), désactivés si vides.
+- Performance : `scripts/lighthouse.sh` audite accueil, ville et fiche en mobile sur l'image de production (seuil 85, hors CI).
+- Contenus éditoriaux (CGU, confidentialité, contact, textes des villes et quartiers) : admin Django ; `manage.py check --deploy` signale ceux encore marqués `[À RÉDIGER]`.
 
 ## Avancement
 

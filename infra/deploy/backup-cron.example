@@ -1,0 +1,17 @@
+# ---------------------------------------------------------------------------
+# Sauvegardes PostgreSQL — exemple de crontab (OPTIONNEL).
+#
+# La sauvegarde applicative est assurée par une tâche Celery beat (dump chiffré
+# avec BACKUP_ENCRYPTION_KEY, envoyé sur le bucket privé) : voir docs/backups.md.
+# Ce cron est un filet de sécurité indépendant de l'application (dump local brut,
+# utile si Celery ou le stockage S3 sont en panne). À installer pour l'utilisateur
+# `deploy` :  crontab -e  puis coller la ligne ci-dessous.
+#
+# Restauration : voir docs/backups.md.
+# ---------------------------------------------------------------------------
+
+# Tous les jours à 03:30 : dump compressé + purge des dumps de plus de 7 jours.
+30 3 * * * cd /opt/loka && mkdir -p backups && docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "backups/loka-$(date +\%F).dump" && find backups -name 'loka-*.dump' -mtime +7 -delete >> /var/log/loka-backup.log 2>&1
+
+# Toutes les heures : alerte si le disque dépasse 85 % (remplacer par votre outil de monitoring).
+0 * * * * df -P / | awk 'NR==2 && $5+0 > 85 {print "Disque à " $5 " sur /"}' | logger -t loka-disk

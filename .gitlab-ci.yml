@@ -1,5 +1,5 @@
 # Pipeline Loka : lint -> test -> build -> deploy (manuel)
-stages: [lint, test, build, deploy]
+stages: [lint, test, build, e2e, deploy]
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -112,11 +112,104 @@ build:web:
     - docker build -f infra/docker/web.Dockerfile --target prod --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" -t "$CI_REGISTRY_IMAGE/web:$CI_COMMIT_SHORT_SHA" apps/web
     - docker push "$CI_REGISTRY_IMAGE/web:$CI_COMMIT_SHORT_SHA"
 
+# Déploiement manuel sur le VPS via SSH (voir docs/deploy.md).
+# Variables CI requises (Settings > CI/CD > Variables, protégées + masquées) :
+#   DEPLOY_HOST        : IP ou nom du VPS
+#   DEPLOY_USER        : utilisateur SSH (défaut : deploy)
+#   DEPLOY_SSH_KEY     : clé privée ed25519 encodée en base64 (`base64 -w0 ~/.ssh/loka_deploy`)
+#   DEPLOY_KNOWN_HOSTS : sortie de `ssh-keyscan -H $DEPLOY_HOST`
+#   DEPLOY_DOMAIN      : domaine public (URL de l'environnement GitLab)
+#   NEXT_PUBLIC_API_URL: https://DOMAIN/api/v1 (utilisée par build:web)
+# Tests de bout en bout Playwright (desktop + mobile) contre la stack complète en services CI.
+e2e:playwright:
+  stage: e2e
+  image: mcr.microsoft.com/playwright:v1.63.0-noble
+  services:
+    - name: postgis/postgis:16-3.4
+      alias: postgres
+    - name: redis:7-alpine
+      alias: redis
+    - name: quay.io/minio/minio:latest
+      alias: minio
+      command: ["server", "/data"]
+    - name: $CI_REGISTRY_IMAGE/api:$CI_COMMIT_SHORT_SHA
+      alias: api
+      # L'image prod tourne avec settings.dev ici : base de test, stockage MinIO, emails console.
+      variables:
+        DJANGO_SETTINGS_MODULE: config.settings.dev
+        DJANGO_SECRET_KEY: e2e-secret-key-not-for-production-0123456789
+        DATABASE_URL: postgis://loka:loka@postgres:5432/loka
+        REDIS_URL: redis://redis:6379/0
+        CELERY_BROKER_URL: redis://redis:6379/1
+        CELERY_TASK_ALWAYS_EAGER: "1"
+        S3_ENDPOINT_URL: http://minio:9000
+        S3_PUBLIC_ENDPOINT_URL: http://minio:9000
+        S3_ACCESS_KEY: loka
+        S3_SECRET_KEY: loka-minio-secret
+        SITE_URL: http://localhost:3000
+        CORS_ALLOWED_ORIGINS: http://localhost:3000
+        PAYMENT_PROVIDER: mock
+      command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py seed --no-photos && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2"]
+  variables:
+    POSTGRES_DB: loka
+    POSTGRES_USER: loka
+    POSTGRES_PASSWORD: loka
+    MINIO_ROOT_USER: loka
+    MINIO_ROOT_PASSWORD: loka-minio-secret
+    FF_NETWORK_PER_BUILD: "true"
+    NEXT_PUBLIC_API_URL: http://api:8000/api/v1
+    API_INTERNAL_URL: http://api:8000/api/v1
+    NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    E2E_BASE_URL: http://localhost:3000
+    E2E_API_URL: http://api:8000/api/v1
+    E2E_RECORD_VIDEO: "1"
+  before_script:
+    - cd apps/web
+    - npm ci
+    - npm run build
+    - (PORT=3000 HOSTNAME=0.0.0.0 node .next/standalone/apps/web/server.js > ../../web.log 2>&1 &) || (PORT=3000 HOSTNAME=0.0.0.0 npm run start > ../../web.log 2>&1 &)
+    - for i in $(seq 1 60); do wget -q -O /dev/null http://localhost:3000/ && break; sleep 2; done
+  script:
+    - npx playwright test --project=desktop --project=mobile
+  after_script:
+    - cp web.log apps/web/playwright-report/ 2>/dev/null || true
+  artifacts:
+    when: on_failure
+    expire_in: 7 days
+    paths:
+      - apps/web/playwright-report/
+      - apps/web/test-results/
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+      allow_failure: true
+
 deploy:prod:
   stage: deploy
   image: alpine:3.20
+  needs: [build:api, build:web]
+  variables:
+    GIT_STRATEGY: none
+    DEPLOY_USER: deploy
+    DEPLOY_DIR: /opt/loka
+  before_script:
+    - apk add --no-cache openssh-client > /dev/null
+    - test -n "$DEPLOY_HOST" && test -n "$DEPLOY_SSH_KEY" && test -n "$DEPLOY_KNOWN_HOSTS"
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - echo "$DEPLOY_SSH_KEY" | base64 -d > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - echo "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
   script:
-    - echo "Deploiement a cabler (SSH + docker compose pull/up). Voir docs/architecture.md."
+    - ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "cd $DEPLOY_DIR && ./deploy.sh --tag $CI_COMMIT_SHORT_SHA"
+  after_script:
+    - rm -f ~/.ssh/id_ed25519
+  environment:
+    name: production
+    url: https://$DEPLOY_DOMAIN
   when: manual
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_TAG

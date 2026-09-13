@@ -18,6 +18,7 @@ apps/api/staticfiles/
 # Node / Next.js
 node_modules/
 .next/
+.next-prod/
 out/
 *.tsbuildinfo
 apps/web/playwright-report/
@@ -34,3 +35,6 @@ Thumbs.db
 
 # Next.js generated
 apps/web/next-env.d.ts
+
+# Rapports Lighthouse locaux
+.lighthouse/

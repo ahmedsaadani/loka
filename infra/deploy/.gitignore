@@ -1,0 +1,4 @@
+# Fichiers propres au VPS, jamais versionnés.
+.env.prod
+.deploy/
+backups/

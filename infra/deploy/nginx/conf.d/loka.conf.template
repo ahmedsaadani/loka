@@ -1,0 +1,181 @@
+# ---------------------------------------------------------------------------
+# Serveur virtuel Loka (production). Rendu par envsubst : seule ${DOMAIN} est
+# substituée (NGINX_ENVSUBST_FILTER=^DOMAIN$), les $variables nginx restent intactes.
+#
+# Routage :
+#   /.well-known/acme-challenge/  -> webroot certbot (HTTP et HTTPS)
+#   /api/                         -> api:8000 (Django/gunicorn)
+#   /django-static/               -> volume partagé (collectstatic), cache 1 an
+#   /media/                       -> minio:9000 (uniquement avec le profil minio)
+#   /_next/static/                -> web:3000, cache 1 an (fichiers hashés)
+#   /                             -> web:3000 (Next.js ; inclut /admin, le back-office de l'équipe)
+#
+# L'admin Django (/admin/ côté API) n'est volontairement PAS exposé publiquement :
+# le préfixe /admin est occupé par le back-office Next. Voir docs/deploy.md
+# (« Admin Django ») pour y accéder via un tunnel SSH.
+# ---------------------------------------------------------------------------
+
+# Amonts résolus dynamiquement (resolver 127.0.0.11 dans nginx.conf) : nginx
+# démarre même si un conteneur n'est pas encore prêt.
+map $host $upstream_api   { default http://api:8000; }
+map $host $upstream_web   { default http://web:3000; }
+map $host $upstream_minio { default http://minio:9000; }
+
+# ---------------------------------------------------------------- HTTP -> HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOMAIN} www.${DOMAIN};
+
+    # Sonde de santé du conteneur nginx (healthcheck compose).
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+    }
+
+    # Défi ACME (renouvellement des certificats) : doit rester en HTTP.
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type "text/plain";
+    }
+
+    location / {
+        return 301 https://${DOMAIN}$request_uri;
+    }
+}
+
+# ---------------------------------------------------------------- www -> apex (HTTPS)
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name www.${DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    include /etc/nginx/snippets/security-headers.conf;
+
+    return 301 https://${DOMAIN}$request_uri;
+}
+
+# ---------------------------------------------------------------- HTTPS
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    # --- TLS (Let's Encrypt, renouvelé par le conteneur certbot) ---
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN}/chain.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+
+    include /etc/nginx/snippets/security-headers.conf;
+
+    client_max_body_size 25m;
+
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+    }
+
+    # --- ACME (au cas où un client suit la redirection HTTPS) ---
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type "text/plain";
+    }
+
+    # --- Authentification : limitation de débit (10 r/min par IP, rafale 20) ---
+    location ^~ /api/v1/auth/ {
+        limit_req zone=auth burst=20 nodelay;
+        include /etc/nginx/snippets/proxy-params.conf;
+        include /etc/nginx/snippets/security-headers.conf;
+        proxy_pass $upstream_api;
+    }
+
+    # --- API Django ---
+    location ^~ /api/ {
+        include /etc/nginx/snippets/proxy-params.conf;
+        include /etc/nginx/snippets/security-headers.conf;
+        proxy_pass $upstream_api;
+    }
+
+    # --- Statiques Django (sortie de collectstatic, volume partagé avec api) ---
+    location ^~ /django-static/ {
+        alias /var/www/django-static/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        include /etc/nginx/snippets/security-headers.conf;
+        access_log off;
+    }
+
+    # --- Médias MinIO (profil minio uniquement ; ignoré si S3 externe) ---
+    # https://DOMAIN/media/<bucket>/<clé>  ->  http://minio:9000/<bucket>/<clé>
+    location ^~ /media/ {
+        rewrite ^/media/(.*)$ /$1 break;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Connection "";
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_buffering off;
+        expires 7d;
+        add_header Cache-Control "public";
+        include /etc/nginx/snippets/security-headers.conf;
+        proxy_pass $upstream_minio;
+    }
+
+    # --- Bundles Next.js (noms hashés : cache long) ---
+    location ^~ /_next/static/ {
+        include /etc/nginx/snippets/proxy-params.conf;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        include /etc/nginx/snippets/security-headers.conf;
+        access_log off;
+        proxy_pass $upstream_web;
+    }
+
+    # --- Front Next.js (pages publiques, /compte, /hote, /admin) ---
+    location / {
+        include /etc/nginx/snippets/proxy-params.conf;
+        include /etc/nginx/snippets/security-headers.conf;
+        proxy_pass $upstream_web;
+    }
+}
+
+# ---------------------------------------------------------------- Admin Django (optionnel)
+# Décommenter pour exposer l'admin Django sur admin.${DOMAIN}, restreint par IP.
+# Prérequis : DNS admin.${DOMAIN}, certificat étendu (-d admin.${DOMAIN} --expand),
+# admin.${DOMAIN} dans DJANGO_ALLOWED_HOSTS et https://admin.${DOMAIN} dans CORS_ALLOWED_ORIGINS.
+# server {
+#     listen 443 ssl;
+#     listen [::]:443 ssl;
+#     http2 on;
+#     server_name admin.${DOMAIN};
+#     ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     include /etc/nginx/snippets/security-headers.conf;
+#
+#     allow 203.0.113.10;   # IP fixe de l'équipe
+#     deny  all;
+#
+#     location ^~ /django-static/ {
+#         alias /var/www/django-static/;
+#         expires 1y;
+#     }
+#     location / {
+#         include /etc/nginx/snippets/proxy-params.conf;
+#         proxy_pass $upstream_api;
+#     }
+# }
