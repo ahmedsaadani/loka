@@ -7,10 +7,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
-# GDAL/GEOS/PROJ pour GeoDjango, libpq pour psycopg, dépendances WeasyPrint pour les contrats PDF
+# GDAL/GEOS/PROJ pour GeoDjango, libpq pour psycopg, dépendances WeasyPrint pour les contrats PDF.
+# pg_dump/pg_restore (sauvegardes, docs/backups.md) : postgresql-client-16 depuis le dépôt PGDG,
+# même majeure que le serveur (postgis:16). Le client 17 de Debian trixie émet
+# `SET transaction_timeout`, inconnu de PostgreSQL 16, et fait échouer pg_restore.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       gdal-bin libgdal-dev libgeos-dev libproj-dev libpq5 \
-      libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libffi8 \
+      libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libffi8 ca-certificates curl gnupg \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+       | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt trixie-pgdg main" \
+       > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update && apt-get install -y --no-install-recommends postgresql-client-16 \
+    && apt-get purge -y --auto-remove curl gnupg \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 

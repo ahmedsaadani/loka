@@ -4,10 +4,13 @@
 .EXAMPLE
   powershell -File scripts/dev.ps1 dev
   powershell -File scripts/dev.ps1 test-api
+  powershell -File scripts/dev.ps1 restore -Name backups/db/2026/09/loka-20260913-030000.dump.fernet
 #>
 param(
   [Parameter(Position = 0)]
-  [string]$Target = "help"
+  [string]$Target = "help",
+  # Nom de la sauvegarde pour la cible `restore` (ex. backups/db/2026/09/loka-....dump.fernet)
+  [string]$Name = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,7 +21,7 @@ function Compose { docker compose @args; if ($LASTEXITCODE -ne 0) { exit $LASTEX
 
 switch ($Target) {
   "help" {
-    Write-Host "Cibles : dev, down, clean, logs, ps, build, api-shell, web-shell, migrate, makemigrations, seed, types, lint, lint-api, lint-web, test, test-api, test-web"
+    Write-Host "Cibles : dev, down, clean, logs, ps, build, api-shell, web-shell, migrate, makemigrations, seed, types, lint, lint-api, lint-web, test, test-api, test-web, e2e, audit, backup, backups, restore -Name <nom>"
   }
   "dev" {
     Compose up -d --build
@@ -40,6 +43,13 @@ switch ($Target) {
   "makemigrations" { Compose exec api python manage.py makemigrations }
   "seed"           { Compose exec api python manage.py seed }
   "types"          { Compose exec web npm run api:types }
+  "backup"         { Compose run --rm -T api python manage.py backup_db }
+  "backups"        { Compose run --rm -T api python manage.py list_backups }
+  "restore" {
+    # DESTRUCTIF : remplace la base courante. Voir docs/backups.md.
+    if (-not $Name) { Write-Error "usage : scripts/dev.ps1 restore -Name backups/db/AAAA/MM/loka-....dump.fernet"; exit 1 }
+    Compose run --rm -T -e ALLOW_DB_RESTORE=1 api python manage.py restore_db $Name --yes
+  }
   "lint-api" {
     Compose exec api ruff check .
     Compose exec api ruff format --check .

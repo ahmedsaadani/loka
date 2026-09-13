@@ -4,7 +4,7 @@
 COMPOSE := docker compose
 
 .PHONY: help dev down logs ps build api-shell web-shell migrate makemigrations seed \
-        lint lint-api lint-web test test-api test-web e2e audit types clean
+        lint lint-api lint-web test test-api test-web e2e audit types clean \n        backup backups restore
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -48,6 +48,16 @@ seed: ## Charge les données de démo (villes, quartiers, biens, comptes de test
 
 types: ## Génère les types TS depuis le schéma OpenAPI de l'API
 	$(COMPOSE) exec web npm run api:types
+
+backup: ## Sauvegarde chiffrée immédiate de PostgreSQL vers le bucket privé (+ rotation)
+	$(COMPOSE) run --rm -T api python manage.py backup_db
+
+backups: ## Liste les sauvegardes disponibles
+	$(COMPOSE) run --rm -T api python manage.py list_backups
+
+restore: ## DESTRUCTIF : restaure la base depuis une sauvegarde. Usage : make restore name=backups/db/...
+	@test -n "$(name)" || (echo "usage : make restore name=backups/db/AAAA/MM/loka-....dump.fernet" && exit 1)
+	$(COMPOSE) run --rm -T -e ALLOW_DB_RESTORE=1 api python manage.py restore_db "$(name)" --yes
 
 lint: lint-api lint-web ## Lint complet
 

@@ -71,6 +71,10 @@ Les pages ville, quartier et fiche sont générées à la demande (ISR, `revalid
 
 L'adresse exacte d'un bien est stockée en base (`address_private`) et n'est exposée qu'aux hôtes du bien, au staff, et au voyageur d'une réservation confirmée.
 
+## Sauvegardes
+
+La base PostgreSQL est sauvegardée chaque nuit (tâche Celery `core.tasks.backup_database`, 03:00 Africa/Tunis) : `pg_dump -Fc`, chiffrement symétrique Fernet avec `BACKUP_ENCRYPTION_KEY`, dépôt dans le bucket privé sous `backups/db/AAAA/MM/`. Rétention : 7 quotidiennes + 4 hebdomadaires. Sans clé configurée, les sauvegardes sont désactivées. Commandes `backup_db`, `list_backups`, `restore_db` (destructive, double garde-fou). Procédure complète de restauration et checklist de reprise : [docs/backups.md](backups.md).
+
 ## Environnements
 
 | | dev | prod |
@@ -83,8 +87,8 @@ L'adresse exacte d'un bien est stockée en base (`address_private`) et n'est exp
 
 ## CI/CD
 
-GitLab CI : `lint` (ruff, mypy, eslint, prettier, tsc) → `test` (pytest avec PostGIS, vitest) → `build` (images sur `main` et tags) → `deploy` (manuel, à câbler).
+GitLab CI : `lint` (ruff, mypy, eslint, prettier, tsc) → `test` (pytest avec PostGIS, vitest) → `build` (images sur `main` et tags) → `deploy:prod` (manuel : SSH vers le VPS et `deploy.sh --tag <sha>`).
 
-## Déploiement cible (indicatif)
+## Déploiement
 
-Un VPS avec docker compose de prod (nginx, web, api, worker, postgres, redis) suffit au lancement. `infra/nginx/loka.conf` est le point de départ. Migration vers k8s seulement si la charge le justifie (`infra/k8s/`).
+Un VPS unique avec le compose de prod [`infra/deploy/docker-compose.prod.yml`](../infra/deploy/docker-compose.prod.yml) : nginx (TLS Let's Encrypt renouvelé par un conteneur certbot, en-têtes de sécurité, rate limit sur l'auth), web, api (gunicorn), worker et beat Celery, PostGIS, Redis, MinIO en option (profil `minio`) ou S3 externe. `deploy.sh` enchaîne pull, migrations forward-only, `collectstatic` vers un volume servi par nginx, `up -d`, healthchecks, revalidation ISR et rollback automatique sur le tag précédent. Procédure complète, DNS emails et checklist : [docs/deploy.md](deploy.md). Migration vers k8s seulement si la charge le justifie (`infra/k8s/`).
