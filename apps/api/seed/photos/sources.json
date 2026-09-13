@@ -1,0 +1,778 @@
+{
+  "_comment": "Liste vérifiée de photos Unsplash (licence Unsplash, https://unsplash.com/license). Constituée le 2026-09-13 à partir des pages de recherche Unsplash ; aucune clé API n'était disponible, d'où des URL CDN directes. Chaque entrée : id de page Unsplash, id CDN (https://images.unsplash.com/photo-<cdn>), auteur, pseudo, catégorie. Photos de démonstration uniquement, voir CREDITS.md. Sélection vérifiée visuellement le 2026-09-13 (27 photos écartées : gros plans, scènes sombres, personnes visibles, architecture non méditerranéenne).",
+  "licence": "Unsplash License",
+  "base_url": "https://images.unsplash.com/photo-",
+  "params": "w=1600&q=80&fm=jpg&fit=max",
+  "photos": [
+    {
+      "category": "salon",
+      "page": "H9-YP66hHao",
+      "cdn": "1788398882568-62c336043c72",
+      "author": "David Marquez",
+      "handle": "mark_ez_estudio"
+    },
+    {
+      "category": "salon",
+      "page": "QStrN6Pr4wM",
+      "cdn": "1760204741315-abfc98ce3bf5",
+      "author": "Ruben Aster",
+      "handle": "ruben_aster"
+    },
+    {
+      "category": "salon",
+      "page": "6viJObrmnBw",
+      "cdn": "1505577058444-a3dab90d4253",
+      "author": "Maria Orlova",
+      "handle": "orlovamaria"
+    },
+    {
+      "category": "salon",
+      "page": "gQwmhH2PRqY",
+      "cdn": "1782939355626-8df602c595fb",
+      "author": "AZIZ KOURI",
+      "handle": "kourigrapher"
+    },
+    {
+      "category": "salon",
+      "page": "n44k4pSeRJM",
+      "cdn": "1756569620147-67d97c02375c",
+      "author": "Sebastian Jacobsen",
+      "handle": "hejsfj"
+    },
+    {
+      "category": "salon",
+      "page": "oS97v02HN2I",
+      "cdn": "1544234674-d099c6efdb0d",
+      "author": "Aleks",
+      "handle": "aaaarupar"
+    },
+    {
+      "category": "salon",
+      "page": "77U1wzOD1yw",
+      "cdn": "1616593871468-2a9452218369",
+      "author": "Spacejoy",
+      "handle": "spacejoy"
+    },
+    {
+      "category": "salon",
+      "page": "F9g66btBoig",
+      "cdn": "1785708434653-e6b8a3d776d1",
+      "author": "David Marquez",
+      "handle": "mark_ez_estudio"
+    },
+    {
+      "category": "salon",
+      "page": "5Ht4bS4hy-g",
+      "cdn": "1674813800360-986f294ce9bc",
+      "author": "Chloé Lefleur",
+      "handle": "chloe_lefleur"
+    },
+    {
+      "category": "salon",
+      "page": "wfb4rD0OC0k",
+      "cdn": "1620691281018-962209eeba37",
+      "author": "Jon Tyson",
+      "handle": "jontyson"
+    },
+    {
+      "category": "salon",
+      "page": "mj1VcrVMs4g",
+      "cdn": "1786462543687-26614deb2d6f",
+      "author": "David Marquez",
+      "handle": "mark_ez_estudio"
+    },
+    {
+      "category": "salon",
+      "page": "fDQkGvdA1Nw",
+      "cdn": "1786462543680-38fa07943fab",
+      "author": "David Marquez",
+      "handle": "mark_ez_estudio"
+    },
+    {
+      "category": "salon",
+      "page": "vSq4NinMfHk",
+      "cdn": "1628004901327-f017065b9185",
+      "author": "Andres Medina",
+      "handle": "kiyoshi_jpg"
+    },
+    {
+      "category": "salon",
+      "page": "SS5heg6j6A4",
+      "cdn": "1674813800339-c499b3db29b9",
+      "author": "Chloé Lefleur",
+      "handle": "chloe_lefleur"
+    },
+    {
+      "category": "salon",
+      "page": "CBstGVEgTlw",
+      "cdn": "1745429523615-2a82c60bfc02",
+      "author": "POOJAN THANEKAR",
+      "handle": "poojanclicks"
+    },
+    {
+      "category": "chambre",
+      "page": "D9HHY5h9qlw",
+      "cdn": "1630699033486-1c023b58bf77",
+      "author": "Point3D Commercial Imaging Ltd.",
+      "handle": "3dottawa"
+    },
+    {
+      "category": "chambre",
+      "page": "-_GU-VDIHnk",
+      "cdn": "1780672823770-dc40e2181cdf",
+      "author": "Taylor Friehl",
+      "handle": "taylor_friehl"
+    },
+    {
+      "category": "chambre",
+      "page": "8O5L1ZywiPg",
+      "cdn": "1644955052489-10bda5c94b19",
+      "author": "Samuel Regan-Asante",
+      "handle": "reganography"
+    },
+    {
+      "category": "chambre",
+      "page": "DEfgoEX4ya8",
+      "cdn": "1766431066492-9bec8410a57b",
+      "author": "Annie Spratt",
+      "handle": "anniespratt"
+    },
+    {
+      "category": "chambre",
+      "page": "nVDaaKMtiMo",
+      "cdn": "1766431014990-39bb54f64f50",
+      "author": "Annie Spratt",
+      "handle": "anniespratt"
+    },
+    {
+      "category": "chambre",
+      "page": "ZVpPsz4tPds",
+      "cdn": "1635108196981-f21e87e4cc1f",
+      "author": "Point3D Commercial Imaging Ltd.",
+      "handle": "3dottawa"
+    },
+    {
+      "category": "chambre",
+      "page": "qnYbBALP4dA",
+      "cdn": "1628746234641-28eb583a51b4",
+      "author": "Zac Gudakov",
+      "handle": "zacgudakov"
+    },
+    {
+      "category": "cuisine",
+      "page": "tUFogT8Mn8U",
+      "cdn": "1630699293875-e56c25151c4b",
+      "author": "Point3D Commercial Imaging Ltd.",
+      "handle": "3dottawa"
+    },
+    {
+      "category": "cuisine",
+      "page": "TkprGwygO5Q",
+      "cdn": "1630699144641-72fa7a6b8aa1",
+      "author": "Point3D Commercial Imaging Ltd.",
+      "handle": "3dottawa"
+    },
+    {
+      "category": "cuisine",
+      "page": "ImHGMkJ_Mvg",
+      "cdn": "1759691337957-ebc9ed54dc44",
+      "author": "Raphael (Ajani Kamali Akio)",
+      "handle": "akasm"
+    },
+    {
+      "category": "cuisine",
+      "page": "xLEQEF3cC1s",
+      "cdn": "1781249144275-c04daed37031",
+      "author": "Irena Oze",
+      "handle": "iistyle"
+    },
+    {
+      "category": "cuisine",
+      "page": "KYM5QsbRsxk",
+      "cdn": "1715985160053-d339e8b6eb94",
+      "author": "Gerda Kauks",
+      "handle": "gdisain"
+    },
+    {
+      "category": "cuisine",
+      "page": "8L3sarFsV8E",
+      "cdn": "1759691337936-ef702afd0714",
+      "author": "Raphael (Ajani Kamali Akio)",
+      "handle": "akasm"
+    },
+    {
+      "category": "cuisine",
+      "page": "Uv2llANteFI",
+      "cdn": "1759150712537-0e32b6c6a373",
+      "author": "Alina Tramontana",
+      "handle": "render_innovate3d"
+    },
+    {
+      "category": "cuisine",
+      "page": "HZgSvndfakc",
+      "cdn": "1774716925718-82ea2f2eb01b",
+      "author": "Lukáš Parničan",
+      "handle": "lukasparnican"
+    },
+    {
+      "category": "cuisine",
+      "page": "6nyTL54GO8w",
+      "cdn": "1773098587137-1a62971cfedb",
+      "author": "Franco Debartolo",
+      "handle": "francotheshooter"
+    },
+    {
+      "category": "cuisine",
+      "page": "rRH2iVYtEjo",
+      "cdn": "1759150712360-6d48015e4f86",
+      "author": "Alina Tramontana",
+      "handle": "render_innovate3d"
+    },
+    {
+      "category": "cuisine",
+      "page": "diHGlclTjM4",
+      "cdn": "1597497522150-2f50bffea452",
+      "author": "Filip Baotić",
+      "handle": "filipbaotic"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "Aac7IlKnYX8",
+      "cdn": "1620626011761-996317b8d101",
+      "author": "Steven Ungermann",
+      "handle": "steveungermann"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "1AF5hP6F4tI",
+      "cdn": "1629079447777-1e605162dc8d",
+      "author": "Steven Ungermann",
+      "handle": "steveungermann"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "U7PitHRnTNU",
+      "cdn": "1552321554-5fefe8c9ef14",
+      "author": "Phil Hearing",
+      "handle": "philhearing"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "6TY_WrJTwSI",
+      "cdn": "1521783593447-5702b9bfd267",
+      "author": "Chastity Cortijo",
+      "handle": "chastityco"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "2X9H1lD_k2Q",
+      "cdn": "1631048499052-e6d9f305d2c0",
+      "author": "Point3D Commercial Imaging Ltd.",
+      "handle": "3dottawa"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "Dk_o7KQyGkI",
+      "cdn": "1638799869566-b17fa794c4de",
+      "author": "Lotus Design N Print",
+      "handle": "lotusdnp"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "FJLoqqIsSHc",
+      "cdn": "1586798271654-0471bb1b0517",
+      "author": "Chastity Cortijo",
+      "handle": "chastityco"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "cxpB9IPVjDM",
+      "cdn": "1643949700215-e61cdca053f7",
+      "author": "Bilal Mansuri",
+      "handle": "itsbilalmn"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "vkIgPbAIcoE",
+      "cdn": "1744869524920-f0efc925b82f",
+      "author": "Smart Renovations",
+      "handle": "smartrenovationscanada"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "2QxjeVERIPw",
+      "cdn": "1723984790027-ffe34efb18f6",
+      "author": "Antoine Gravier",
+      "handle": "antoine_gravphotos"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "ODU4mXpF-5I",
+      "cdn": "1662624914003-9bb2095ca7a0",
+      "author": "Jessica Hearn",
+      "handle": "jessica_hearn"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "d5yfKfMSk9o",
+      "cdn": "1613849925352-96348d26bc51",
+      "author": "Zac Gudakov",
+      "handle": "zacgudakov"
+    },
+    {
+      "category": "salle_de_bain",
+      "page": "9s1OFCdUvPE",
+      "cdn": "1722248211070-6a17915f5cba",
+      "author": "Lisa Anna",
+      "handle": "lisaanna195"
+    },
+    {
+      "category": "balcon_vue",
+      "page": "ZGMeWNJJlAs",
+      "cdn": "1689717887631-088197cdc2ca",
+      "author": "imren tutuncu",
+      "handle": "irmikten"
+    },
+    {
+      "category": "balcon_vue",
+      "page": "oMG53sKWIeo",
+      "cdn": "1739931271383-214b903a0ac3",
+      "author": "Rafa Francischini",
+      "handle": "rafafrancischini"
+    },
+    {
+      "category": "balcon_vue",
+      "page": "N1DlQkl2V2c",
+      "cdn": "1769869173719-997e7be14a56",
+      "author": "Gábor Szűts",
+      "handle": "szutsi"
+    },
+    {
+      "category": "balcon_vue",
+      "page": "tVNem9OsOIE",
+      "cdn": "1780988304043-1f4e4aa1e236",
+      "author": "Sara Abilova",
+      "handle": "sarahabilova"
+    },
+    {
+      "category": "balcon_vue",
+      "page": "eaBqnIKUiFc",
+      "cdn": "1781171282236-9a096d2c252a",
+      "author": "Christina Terzidou",
+      "handle": "christinaterzidou"
+    },
+    {
+      "category": "balcon_vue",
+      "page": "25YdVa2stY0",
+      "cdn": "1786610355651-cc0c0db756ac",
+      "author": "john xe",
+      "handle": "johnxe_"
+    },
+    {
+      "category": "balcon_vue",
+      "page": "0B3KbEacBmE",
+      "cdn": "1758039761011-c3705d46f752",
+      "author": "Richard Vanlerberghe",
+      "handle": "richardvnlb"
+    },
+    {
+      "category": "balcon_vue",
+      "page": "g6VUINZjtcw",
+      "cdn": "1596445160941-797eb529e19a",
+      "author": "Nick van den Berg",
+      "handle": "nngvandenberg"
+    },
+    {
+      "category": "balcon_vue",
+      "page": "gjd9jWujQNs",
+      "cdn": "1592059740567-fe4c6834d559",
+      "author": "Pelayo Arbués",
+      "handle": "pelayoarbues"
+    },
+    {
+      "category": "facade",
+      "page": "v4Di0A7aj3I",
+      "cdn": "1779917748196-5341917bad2e",
+      "author": "Milan Trninic",
+      "handle": "wedesignmarbella"
+    },
+    {
+      "category": "facade",
+      "page": "_UYe-zupvzA",
+      "cdn": "1788022911499-34aeb8ba2676",
+      "author": "Ositadinma Onyeobi",
+      "handle": "visualsbyosi"
+    },
+    {
+      "category": "facade",
+      "page": "adHR6lRLp2c",
+      "cdn": "1770458827074-2e67b50dcc1d",
+      "author": "Gabrielle Richaume",
+      "handle": "gabriellerichaume"
+    },
+    {
+      "category": "facade",
+      "page": "dQq-7ajhemk",
+      "cdn": "1787672807838-3b1783a3d10f",
+      "author": "Barney Goodman",
+      "handle": "bgoodpic"
+    },
+    {
+      "category": "facade",
+      "page": "c8ELAfHB4ug",
+      "cdn": "1765915778734-3a70cfd8aa2a",
+      "author": "Soban Ahmed",
+      "handle": "thesobanahmed"
+    },
+    {
+      "category": "facade",
+      "page": "9v3Z2GLZUoI",
+      "cdn": "1777340233756-6e18a5aa930b",
+      "author": "Colin OBrien",
+      "handle": "colinobriennn"
+    },
+    {
+      "category": "facade",
+      "page": "EKoWSAiEdwg",
+      "cdn": "1776095603038-a4da54189935",
+      "author": "eliza cemme",
+      "handle": "euuuu"
+    },
+    {
+      "category": "facade",
+      "page": "bhw35iRSY3w",
+      "cdn": "1602523716845-525809f6a81f",
+      "author": "Hert Niks",
+      "handle": "hertwashere"
+    },
+    {
+      "category": "facade",
+      "page": "5rUEdeKQKgw",
+      "cdn": "1602523234812-dbc859c1a3e5",
+      "author": "Hert Niks",
+      "handle": "hertwashere"
+    },
+    {
+      "category": "facade",
+      "page": "dcByiYs45VE",
+      "cdn": "1760726743497-5bc433633eb9",
+      "author": "mathieu gauzy",
+      "handle": "gozstudio"
+    },
+    {
+      "category": "facade",
+      "page": "baymzOWMV5c",
+      "cdn": "1762111602143-4909faef9fb7",
+      "author": "Meina Yin",
+      "handle": "meinayin"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "OwWbUOIbhDY",
+      "cdn": "1509600110300-21b9d5fedeb7",
+      "author": "Jesse Gardner",
+      "handle": "plasticmind"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "zSBcHH18DF8",
+      "cdn": "1597221336986-7a948756cd3a",
+      "author": "Yalçın Ozgan",
+      "handle": "yozgan"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "nM5-mS5eA8I",
+      "cdn": "1603034203013-d532350372c6",
+      "author": "Bernard Hermant",
+      "handle": "bernardhermant"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "zWSPQxvdpWk",
+      "cdn": "1668585419087-55097ab1d520",
+      "author": "Karol Chomka",
+      "handle": "karolchomka"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "BgF2siDdWZI",
+      "cdn": "1603033825246-53b4d1e5c509",
+      "author": "Bernard Hermant",
+      "handle": "bernardhermant"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "ekpJ4wqf2io",
+      "cdn": "1571666402424-c17d7e0cf0dd",
+      "author": "Nabih El Boustani",
+      "handle": "nounouis"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "a0mhcnwhgOE",
+      "cdn": "1673147056688-4df20283643b",
+      "author": "Strvnge Films",
+      "handle": "strvngefilmss"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "6FRwt9vE368",
+      "cdn": "1707075108813-edefd7b3308d",
+      "author": "Vangel Dimo",
+      "handle": "vangeldimo"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "QWs-xsZ0wBs",
+      "cdn": "1741850419928-aa65b3d5e3a6",
+      "author": "Angelina and Antonis",
+      "handle": "angelinaandantonis"
+    },
+    {
+      "category": "villa_piscine",
+      "page": "RWZUDYp8nEY",
+      "cdn": "1670718668686-0d0cedbbfc9c",
+      "author": "Judith Browne",
+      "handle": "jbcalligraphy52"
+    },
+    {
+      "category": "villa_exterieur",
+      "page": "YpAtUek0278",
+      "cdn": "1622015663084-307d19eabbbf",
+      "author": "VJ Von Art",
+      "handle": "vjvonart"
+    },
+    {
+      "category": "villa_exterieur",
+      "page": "2EM81pv61eA",
+      "cdn": "1759062012138-70f215751ca7",
+      "author": "sandy",
+      "handle": "sandykane"
+    },
+    {
+      "category": "villa_exterieur",
+      "page": "oY1_mSFatik",
+      "cdn": "1760643444693-5eb2cd767fe7",
+      "author": "Honza B.",
+      "handle": "honzabe"
+    },
+    {
+      "category": "villa_exterieur",
+      "page": "s5JnDU-MUfY",
+      "cdn": "1783125127059-514d7a90ab99",
+      "author": "Salvo Media LLC",
+      "handle": "salvomedia"
+    },
+    {
+      "category": "villa_exterieur",
+      "page": "4ojhpgKpS68",
+      "cdn": "1523217582562-09d0def993a6",
+      "author": "Pixasquare",
+      "handle": "pixasquare"
+    },
+    {
+      "category": "villa_exterieur",
+      "page": "1aS-ZnGIFFI",
+      "cdn": "1778159158693-138d8c91bb60",
+      "author": "Valentin Lacoste",
+      "handle": "valentinlacoste"
+    },
+    {
+      "category": "villa_exterieur",
+      "page": "cxbIbeXslLE",
+      "cdn": "1786997136163-584e0734d4e7",
+      "author": "jo rhn",
+      "handle": "jo_rhn"
+    },
+    {
+      "category": "villa_exterieur",
+      "page": "HHGlUzVvmeg",
+      "cdn": "1759355787118-7b48305965d8",
+      "author": "ubeyonroad",
+      "handle": "ubeyonroad"
+    },
+    {
+      "category": "studio",
+      "page": "NoPzk4m4jHc",
+      "cdn": "1702014862053-946a122b920d",
+      "author": "Aquilion Property",
+      "handle": "aquilionproperty"
+    },
+    {
+      "category": "studio",
+      "page": "DR2ZXxZpU1o",
+      "cdn": "1722942116153-ee3aa0fc2153",
+      "author": "Lisa Anna",
+      "handle": "lisaanna195"
+    },
+    {
+      "category": "studio",
+      "page": "5aJpyxXaCyA",
+      "cdn": "1750764515068-80d222d974bb",
+      "author": "Alexey Aladashvili",
+      "handle": "alexeyaladashvili61"
+    },
+    {
+      "category": "studio",
+      "page": "z-76AW2WfEk",
+      "cdn": "1737233459465-8eaf6c7d8856",
+      "author": "Prydumano Design",
+      "handle": "prydumanodesign"
+    },
+    {
+      "category": "studio",
+      "page": "dEuvqNbwRuw",
+      "cdn": "1702014857653-dcea938d51f0",
+      "author": "Aquilion Property",
+      "handle": "aquilionproperty"
+    },
+    {
+      "category": "studio",
+      "page": "hrY-pZqFGyI",
+      "cdn": "1702014859908-d48b9b844240",
+      "author": "Aquilion Property",
+      "handle": "aquilionproperty"
+    },
+    {
+      "category": "studio",
+      "page": "hipyVY2bF9g",
+      "cdn": "1742824250069-440c8ba18714",
+      "author": "Christian Ventura",
+      "handle": "arutnevv"
+    },
+    {
+      "category": "studio",
+      "page": "wrmg3RP_OyA",
+      "cdn": "1785232244548-5cfe6fb60418",
+      "author": "Aleksandra Dementeva",
+      "handle": "alexphotogram"
+    },
+    {
+      "category": "studio",
+      "page": "xzT55J7D1tg",
+      "cdn": "1787063567534-5d07958b9dbe",
+      "author": "Aleksandra Dementeva",
+      "handle": "alexphotogram"
+    },
+    {
+      "category": "studio",
+      "page": "Vcrg4HzaQqY",
+      "cdn": "1772476361206-958e402f98d3",
+      "author": "Meklay YOTKHAMSAY",
+      "handle": "meklaymeklay"
+    },
+    {
+      "category": "studio",
+      "page": "on0Y7I1gITs",
+      "cdn": "1722942719131-2a208e55d72e",
+      "author": "Alex Tyson",
+      "handle": "alextyson195"
+    },
+    {
+      "category": "studio",
+      "page": "g22szjIGImA",
+      "cdn": "1721522286782-35de2cb8630b",
+      "author": "Lisa Anna",
+      "handle": "lisaanna195"
+    },
+    {
+      "category": "studio",
+      "page": "3EariUCKobw",
+      "cdn": "1633429083846-376f1b9737a4",
+      "author": "laura adai",
+      "handle": "lauraadaiphoto"
+    },
+    {
+      "category": "studio",
+      "page": "prWez2XYJps",
+      "cdn": "1722942627377-8c801bad22d6",
+      "author": "Lisa Anna",
+      "handle": "lisaanna195"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "qDeMuOXFYXU",
+      "cdn": "1674162406360-df5ec5eb97e4",
+      "author": "Ivona Rož",
+      "handle": "ivonar"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "WQJvWU_HZFo",
+      "cdn": "1555854877-bab0e564b8d5",
+      "author": "Marcus Loke",
+      "handle": "marcusloke"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "hn35bzyfed8",
+      "cdn": "1787837152807-615e4dd7f849",
+      "author": "Ayana Bula",
+      "handle": "yanyan100"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "jM-dZdFtnbk",
+      "cdn": "1697899131342-2f311347f1c5",
+      "author": "Aim | @photobypitcha",
+      "handle": "aimpitcha"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "dYIAyEUlf40",
+      "cdn": "1661351267283-5ccf58695e6d",
+      "author": "Metin Ozer",
+      "handle": "metinozer"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "KGo29e3zjI0",
+      "cdn": "1784886330082-a628b99fae8a",
+      "author": "JEJOONG LEE",
+      "handle": "rfcking"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "Rbt_VCKGy-Y",
+      "cdn": "1621891333885-66f833b348ba",
+      "author": "Andrew Neel",
+      "handle": "andrewtneel"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "WDUtNbot6Qw",
+      "cdn": "1638454668466-e8dbd5462f20",
+      "author": "Lotus Design N Print",
+      "handle": "lotusdnp"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "cSX3ZoEKSxQ",
+      "cdn": "1749785436843-674d66c405ca",
+      "author": "Grace Anne Bobadilla",
+      "handle": "graceannefully"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "w84MOrTfbdw",
+      "cdn": "1621891334481-5c14b369d9d7",
+      "author": "Andrew Neel",
+      "handle": "andrewtneel"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "hzVoShM7ds4",
+      "cdn": "1782898623015-ed31d9c01c7c",
+      "author": "Rodrigo Rodrigues | WOLF Λ R T",
+      "handle": "wolfart32"
+    },
+    {
+      "category": "chambre_etudiante",
+      "page": "t8kYx7Xvy0U",
+      "cdn": "1776348065025-acc32a51f53c",
+      "author": "Marc Wieland",
+      "handle": "mawiswiss"
+    }
+  ]
+}

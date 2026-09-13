@@ -3,7 +3,7 @@
 .DEFAULT_GOAL := help
 COMPOSE := docker compose
 
-.PHONY: help dev down logs ps build api-shell web-shell migrate makemigrations seed \
+.PHONY: help dev down logs ps build api-shell web-shell migrate makemigrations seed seed-reset \
         lint lint-api lint-web test test-api test-web e2e audit types clean \n        backup backups restore
 
 help: ## Affiche cette aide
@@ -43,8 +43,11 @@ migrate: ## Applique les migrations
 makemigrations: ## Génère les migrations
 	$(COMPOSE) exec api python manage.py makemigrations
 
-seed: ## Charge les données de démo (villes, quartiers, biens, comptes de test)
+seed: ## Charge les données de démo (villes, quartiers, biens avec photos, comptes de test)
 	$(COMPOSE) exec api python manage.py seed
+
+seed-reset: ## Supprime et recrée les biens de démo (photos comprises)
+	$(COMPOSE) exec api python manage.py seed --reset
 
 types: ## Génère les types TS depuis le schéma OpenAPI de l'API
 	$(COMPOSE) exec web npm run api:types

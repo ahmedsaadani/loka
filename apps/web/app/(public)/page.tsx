@@ -61,7 +61,7 @@ export default async function HomePage() {
         {featured.length === 0 ? (
           <p className="text-muted-foreground">Les premières villes arrivent bientôt.</p>
         ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {featured.map((city) => (
               <li key={city.slug}>
                 <Link

@@ -8,7 +8,7 @@ export function ConditionBadge({ grade, className }: { grade: string; className?
   return (
     <Badge
       variant="muted"
-      className={cn("gap-1.5 font-medium", className)}
+      className={cn("shrink-0 gap-1.5 whitespace-nowrap font-medium", className)}
       title="État du bien évalué par l'équipe Loka"
     >
       <span className="flex items-center gap-0.5" aria-hidden="true">

@@ -1,41 +1,56 @@
 """
-Données de démo : 3 villes, 10 quartiers, 25 biens publiés avec photos placeholder,
+Données de démonstration : 4 villes, 13 quartiers, 33 biens publiés (25 appartements et
+studios, 5 villas, 3 chambres en colocation) avec de vraies photos libres de droits,
 équipements, plans tarifaires, 4 comptes de test et quelques leads.
-Idempotent : relancer ne duplique rien.
+
+Les photos proviennent de la banque locale `seed/photos/` (constituée par
+`scripts/fetch_seed_photos.py`, crédits dans `seed/photos/CREDITS.md`) et passent par le
+pipeline réel : validation et ré-encodage, envoi de l'original dans le bucket privé,
+variantes WebP générées par Celery.
+
+Idempotent : chaque bien est identifié par sa clé de catalogue ; relancer ne duplique rien.
+`--reset` supprime les biens de démo (et leurs fichiers) avant de les recréer.
 """
 
 from __future__ import annotations
 
+import json
 import random
+import time
 from datetime import timedelta
 from decimal import Decimal
-from io import BytesIO
+from pathlib import Path
 from typing import Any
 
+from django.conf import settings
 from django.contrib.gis.geos import Point
-from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import ProtectedError
 from django.utils import timezone
-from PIL import Image, ImageDraw
+from slugify import slugify
 
 from accounts.models import HostProfile, Role, User
+from core.seed_catalog import AMENITIES, GEO, PHOTO_ALT, PHOTO_PLANS, PROPERTIES, SeedProperty
+from core.storages import public_storage
 from geo.models import City, Governorate, Neighborhood
 from leads.models import Lead, LeadSource
+from listings import services
 from listings.models import (
     Amenity,
-    ConditionGrade,
     LocationPrecision,
     PricingPlan,
     Property,
     PropertyPhoto,
     PropertyStatus,
-    PropertyType,
     RentalMode,
-    VerificationLevel,
 )
-from notifications.tasks import generate_photo_variants
+
+SEED_TAG = "[seed]"
+PHOTOS_DIR = Path(settings.BASE_DIR) / "seed" / "photos"
+MANIFEST = PHOTOS_DIR / "manifest.json"
 
 ACCOUNTS = [
     ("admin@loka.tn", "loka-admin", Role.ADMIN, "Amira", "Ben Salah"),
@@ -44,95 +59,13 @@ ACCOUNTS = [
     ("traveler@loka.tn", "loka-traveler", Role.TRAVELER, "Léa", "Martin"),
 ]
 
-GEO: dict[str, dict[str, Any]] = {
-    "Ariana": {
-        "gov": "Ariana",
-        "centroid": (10.1647, 36.8625),
-        "featured": True,
-        "intro": "[À RÉDIGER] Texte d'introduction de la page ville, à rédiger dans l'admin (Géographie > Villes).",
-        "neighborhoods": {
-            "Ghazela": (10.1875, 36.8975),
-            "Ennasr": (10.1560, 36.8560),
-            "Menzah 6": (10.1620, 36.8460),
-            "Borj Louzir": (10.1900, 36.8840),
-        },
-    },
-    "Tunis": {
-        "gov": "Tunis",
-        "centroid": (10.1815, 36.8065),
-        "featured": True,
-        "intro": "[À RÉDIGER] Texte d'introduction de la page ville, à rédiger dans l'admin (Géographie > Villes).",
-        "neighborhoods": {
-            "Lac 2": (10.2560, 36.8390),
-            "La Marsa": (10.3250, 36.8780),
-            "Bardo": (10.1400, 36.8090),
-            "Mutuelleville": (10.1760, 36.8300),
-        },
-    },
-    "Sousse": {
-        "gov": "Sousse",
-        "centroid": (10.6400, 35.8250),
-        "featured": True,
-        "intro": "[À RÉDIGER] Texte d'introduction de la page ville, à rédiger dans l'admin (Géographie > Villes).",
-        "neighborhoods": {
-            "Sahloul": (10.5950, 35.8400),
-            "Kantaoui": (10.5990, 35.8900),
-        },
-    },
-}
-
-AMENITIES = [
-    ("wifi", "Wi-Fi", "wifi", Amenity.Category.ESSENTIAL, 1),
-    ("ac", "Climatisation", "snowflake", Amenity.Category.ESSENTIAL, 2),
-    ("heating", "Chauffage", "flame", Amenity.Category.ESSENTIAL, 3),
-    ("kitchen", "Cuisine équipée", "cooking-pot", Amenity.Category.ESSENTIAL, 4),
-    ("washer", "Lave-linge", "washing-machine", Amenity.Category.COMFORT, 5),
-    ("tv", "Télévision", "tv", Amenity.Category.COMFORT, 6),
-    ("desk", "Espace de travail", "laptop", Amenity.Category.COMFORT, 7),
-    ("balcony", "Balcon", "sun", Amenity.Category.COMFORT, 8),
-    ("parking", "Parking", "car", Amenity.Category.BUILDING, 9),
-    ("elevator", "Ascenseur", "arrow-up-down", Amenity.Category.BUILDING, 10),
-    ("security", "Gardien / sécurité", "shield-check", Amenity.Category.SAFETY, 11),
-    ("smoke_detector", "Détecteur de fumée", "siren", Amenity.Category.SAFETY, 12),
+STREETS = [
+    "rue des Jasmins",
+    "avenue Habib Bourguiba",
+    "rue de Carthage",
+    "rue Ibn Khaldoun",
+    "rue des Oliviers",
 ]
-
-PROPERTY_TEMPLATES = [
-    (PropertyType.STUDIO, "Studio", 0, 1, 30, 1),
-    (PropertyType.APARTMENT, "S+1", 1, 1, 55, 2),
-    (PropertyType.APARTMENT, "S+2", 2, 1, 85, 4),
-    (PropertyType.APARTMENT, "S+3", 3, 2, 120, 6),
-    (PropertyType.VILLA, "Villa", 4, 3, 220, 8),
-    (PropertyType.ROOM, "Chambre", 1, 1, 18, 1),
-]
-
-# (masculin, féminin) : Studio / S+x / Appartement sont masculins, Villa / Chambre féminins.
-ADJECTIVES = [
-    ("lumineux", "lumineuse"),
-    ("calme", "calme"),
-    ("moderne", "moderne"),
-    ("rénové", "rénovée"),
-    ("spacieux", "spacieuse"),
-    ("cosy", "cosy"),
-    ("élégant", "élégante"),
-]
-FEMININE_LABELS = {"Villa", "Chambre"}
-FEATURES = [
-    "avec balcon",
-    "vue dégagée",
-    "proche du métro",
-    "près des facs",
-    "quartier résidentiel",
-    "à deux pas des commerces",
-]
-COLORS = ["#c96f4a", "#b5502e", "#d9a066", "#8a9a7b", "#6b8fa3", "#a37b6b", "#7f8c8d"]
-
-DESCRIPTION = (
-    "{title}. Situé à {neighborhood}, ce {kind} de {surface} m² est entièrement meublé et équipé pour "
-    "un emménagement immédiat. Il comprend {bedrooms} chambre(s), {bathrooms} salle(s) de bain, une "
-    "cuisine fonctionnelle et un séjour agréable. L'immeuble est bien entretenu, le voisinage calme. "
-    "Idéal pour un étudiant, un jeune actif ou un séjour professionnel de quelques mois. "
-    "Le bien a été visité et vérifié par l'équipe Loka : les photos correspondent à la réalité."
-)
 
 LEADS = [
     (
@@ -163,43 +96,117 @@ LEADS = [
 ]
 
 
-def placeholder_image(label: str, color: str, size: tuple[int, int] = (1600, 1200)) -> ContentFile:
-    image = Image.new("RGB", size, color)
-    draw = ImageDraw.Draw(image)
-    draw.rectangle((40, 40, size[0] - 40, size[1] - 40), outline="#ffffff", width=6)
-    draw.text((80, 80), label, fill="#ffffff")
-    buffer = BytesIO()
-    image.save(buffer, format="JPEG", quality=85)
-    return ContentFile(buffer.getvalue(), name="placeholder.jpg")
+class PhotoBank:
+    """Banque locale de photos par catégorie, distribuée de façon déterministe."""
+
+    def __init__(self, rng: random.Random) -> None:
+        if not MANIFEST.exists():
+            raise CommandError(
+                f"Banque de photos absente ({MANIFEST}). Lancez `python scripts/fetch_seed_photos.py` "
+                "à la racine du dépôt, ou relancez le seed avec --no-photos."
+            )
+        entries = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        self.by_category: dict[str, list[dict[str, Any]]] = {}
+        for entry in entries:
+            self.by_category.setdefault(entry["category"], []).append(entry)
+        for files in self.by_category.values():
+            rng.shuffle(files)
+        self.cursor: dict[str, int] = dict.fromkeys(self.by_category, 0)
+        missing = [
+            e["file"]
+            for files in self.by_category.values()
+            for e in files
+            if not (PHOTOS_DIR / e["file"]).exists()
+        ]
+        if missing:
+            raise CommandError(
+                f"{len(missing)} photo(s) listée(s) dans manifest.json sont absentes "
+                f"(ex. {missing[0]}). Relancez scripts/fetch_seed_photos.py."
+            )
+
+    def take(self, category: str, exclude: set[str]) -> dict[str, Any]:
+        files = self.by_category.get(category)
+        if not files:
+            raise CommandError(f"Aucune photo de catégorie « {category} » dans la banque.")
+        for _ in range(len(files)):
+            entry = files[self.cursor[category] % len(files)]
+            self.cursor[category] += 1
+            if entry["file"] not in exclude:
+                return entry
+        return files[self.cursor[category] % len(files)]
 
 
 class Command(BaseCommand):
     help = "Charge les données de démonstration Loka."
 
     def add_arguments(self, parser: Any) -> None:
-        parser.add_argument("--properties", type=int, default=25)
         parser.add_argument(
-            "--no-photos", action="store_true", help="Ne génère pas les photos (plus rapide)"
+            "--properties",
+            type=int,
+            default=None,
+            help="Nombre maximal de biens du catalogue à créer (défaut : tous)",
+        )
+        parser.add_argument(
+            "--no-photos", action="store_true", help="Ne charge pas les photos (plus rapide)"
+        )
+        parser.add_argument(
+            "--reset", action="store_true", help="Supprime d'abord les biens de démo existants"
+        )
+        parser.add_argument(
+            "--wait-variants",
+            type=int,
+            default=180,
+            help="Attente maximale (s) des variantes WebP générées par Celery ; 0 pour ne pas attendre",
         )
 
-    @transaction.atomic
     def handle(self, *args: Any, **options: Any) -> None:
         rng = random.Random(42)  # nosec B311 - données de démo, aucun usage cryptographique
-        users = self._seed_accounts()
-        cities = self._seed_geo()
-        amenities = self._seed_amenities()
-        count = self._seed_properties(
-            rng,
-            users["host@loka.tn"],
-            cities,
-            amenities,
-            options["properties"],
-            not options["no_photos"],
+        with transaction.atomic():
+            users = self._seed_accounts()
+            self._seed_geo()
+            amenities = self._seed_amenities()
+            self._seed_leads(users["staff@loka.tn"])
+            self._seed_site_content()
+        host = users["host@loka.tn"]
+        if options["reset"]:
+            self._reset_properties(host)
+        with_photos = not options["no_photos"]
+        bank = PhotoBank(rng) if with_photos else None
+        limit = options["properties"]
+        catalog = PROPERTIES[:limit] if limit else PROPERTIES
+        created = 0
+        for index, spec in enumerate(catalog):
+            if self._create_property(index, spec, rng, host, amenities, bank):
+                created += 1
+        if with_photos and options["wait_variants"]:
+            self._wait_for_variants(host, options["wait_variants"])
+        call_command("rebuild_snapshots", "--force")
+        self._revalidate_front()
+        total = Property.objects.filter(host=host, verification_notes__startswith=SEED_TAG).count()
+        self.stdout.write(
+            self.style.SUCCESS(f"Seed terminé : {created} bien(s) créé(s), {total} biens de démo.")
         )
-        self._seed_leads(users["staff@loka.tn"])
-        self._seed_site_content()
-        call_command("rebuild_snapshots")
-        self.stdout.write(self.style.SUCCESS(f"Seed terminé : {count} biens publiés."))
+
+    def _revalidate_front(self) -> None:
+        """Purge le cache des pages publiques du front (accueil, villes, quartiers, recherche)."""
+        from core.tasks import enqueue
+        from notifications.tasks import revalidate_front
+
+        if not settings.REVALIDATE_URL:
+            self.stdout.write(
+                "REVALIDATE_URL non défini : le cache du front n'est pas purgé "
+                "(redémarrez le serveur Next ou appelez /api/revalidate)."
+            )
+            return
+        paths = ["/", "/recherche"]
+        tags: list[str] = []
+        for city in City.objects.prefetch_related("neighborhoods"):
+            paths.append(f"/location/{city.slug}")
+            tags.append(f"city:{city.slug}")
+            paths.extend(f"/location/{city.slug}/{n.slug}" for n in city.neighborhoods.all())
+        enqueue(revalidate_front, paths, tags)
+
+    # ------------------------------------------------------------------ comptes, géo
 
     def _seed_accounts(self) -> dict[str, User]:
         users: dict[str, User] = {}
@@ -224,20 +231,19 @@ class Command(BaseCommand):
                     user=user,
                     defaults={
                         "display_name": f"{first} {last}",
-                        "bio": "Propriétaire de plusieurs biens à Tunis et Ariana.",
+                        "bio": "Propriétaire de plusieurs biens à Tunis, Ariana, Sousse et Hammamet.",
                     },
                 )
             users[email] = user
         return users
 
-    def _seed_geo(self) -> dict[str, City]:
-        cities: dict[str, City] = {}
+    def _seed_geo(self) -> None:
         for city_name, data in GEO.items():
             gov, _ = Governorate.objects.get_or_create(
-                slug=city_name.lower(), defaults={"name": data["gov"]}
+                slug=slugify(data["gov"]), defaults={"name": data["gov"]}
             )
             city, _ = City.objects.update_or_create(
-                slug=city_name.lower(),
+                slug=slugify(city_name),
                 defaults={
                     "governorate": gov,
                     "name": city_name,
@@ -248,161 +254,193 @@ class Command(BaseCommand):
                         f"Studios, S+1, S+2 et villas à louer à {city_name}, à la nuit, au mois ou à l'année. "
                         "Chaque bien est visité et validé par l'équipe Loka."
                     ),
-                    "intro_text": data["intro"],
+                    "intro_text": (
+                        "[À RÉDIGER] Texte d'introduction de la page ville, "
+                        "à rédiger dans l'admin (Géographie > Villes)."
+                    ),
                 },
             )
             for name, (lng, lat) in data["neighborhoods"].items():
-                slug = name.lower().replace(" ", "-")
                 Neighborhood.objects.update_or_create(
                     city=city,
-                    slug=slug,
+                    slug=slugify(name),
                     defaults={
                         "name": name,
                         "centroid": Point(lng, lat, srid=4326),
                         "seo_title": f"Location {name}, {city_name} : appartements vérifiés | Loka",
-                        "seo_description": f"Appartements meublés à {name} ({city_name}) visités et validés par Loka.",
-                        "intro_text": f"[À RÉDIGER] Présentation du quartier {name} ({city_name}), à rédiger dans l'admin.",
+                        "seo_description": (
+                            f"Appartements meublés à {name} ({city_name}) visités et validés par Loka."
+                        ),
+                        "intro_text": (
+                            f"[À RÉDIGER] Présentation du quartier {name} ({city_name}), "
+                            "à rédiger dans l'admin."
+                        ),
                     },
                 )
-            cities[city_name] = city
-        return cities
 
-    def _seed_amenities(self) -> list[Amenity]:
-        result = []
+    def _seed_amenities(self) -> dict[str, Amenity]:
+        result: dict[str, Amenity] = {}
         for code, name, icon, category, order in AMENITIES:
             amenity, _ = Amenity.objects.update_or_create(
                 code=code,
                 defaults={"name": name, "icon": icon, "category": category, "order": order},
             )
-            result.append(amenity)
+            result[code] = amenity
         return result
 
-    def _seed_properties(
+    # ------------------------------------------------------------------ biens
+
+    def _reset_properties(self, host: User) -> None:
+        qs = Property.objects.filter(host=host, verification_notes__startswith=SEED_TAG)
+        storage = public_storage()
+        count = 0
+        retired = 0
+        for prop in qs:
+            for photo in prop.photos.all():
+                for name in settings.PHOTO_VARIANTS:
+                    key = f"photos/{prop.pk}/{photo.public_id}_{name}.webp"
+                    if storage.exists(key):
+                        storage.delete(key)
+                photo.original.delete(save=False)
+            try:
+                with transaction.atomic():
+                    prop.delete()
+            except ProtectedError:
+                # Des demandes de réservation (tests, démos) pointent sur ce bien : on le retire
+                # du site sans casser l'historique.
+                prop.photos.all().delete()
+                prop.status = PropertyStatus.DRAFT
+                prop.published_snapshot = None
+                prop.verification_notes = prop.verification_notes.replace(
+                    SEED_TAG, "[seed-retired]", 1
+                )
+                prop.save(
+                    update_fields=[
+                        "status",
+                        "published_snapshot",
+                        "verification_notes",
+                        "updated_at",
+                    ]
+                )
+                retired += 1
+                continue
+            count += 1
+        self.stdout.write(
+            f"{count} bien(s) de démo supprimé(s), {retired} retiré(s) (réservations liées)."
+        )
+
+    def _create_property(
         self,
+        index: int,
+        spec: SeedProperty,
         rng: random.Random,
         host: User,
-        cities: dict[str, City],
-        amenities: list[Amenity],
-        total: int,
-        with_photos: bool,
-    ) -> int:
-        existing = Property.objects.filter(
-            host=host, verification_notes__startswith="[seed]"
-        ).count()
-        if existing >= total:
-            self.stdout.write(f"{existing} biens de démo déjà présents, rien à faire.")
-            return existing
-        neighborhoods = list(Neighborhood.objects.select_related("city"))
+        amenities: dict[str, Amenity],
+        bank: PhotoBank | None,
+    ) -> bool:
+        tag = f"{SEED_TAG} {spec['key']}"
+        if Property.objects.filter(host=host, verification_notes=tag).exists():
+            return False
+        neighborhood = Neighborhood.objects.select_related("city").get(
+            city__slug=slugify(spec["city"]), slug=slugify(spec["neighborhood"])
+        )
         admin = User.objects.get(email="admin@loka.tn")
-        created = 0
-        for index in range(existing, total):
-            neighborhood = neighborhoods[index % len(neighborhoods)]
-            ptype, label, bedrooms, bathrooms, surface, guests = PROPERTY_TEMPLATES[
-                index % len(PROPERTY_TEMPLATES)
-            ]
-            masculine, feminine = ADJECTIVES[index % len(ADJECTIVES)]
-            adjective = feminine if label in FEMININE_LABELS else masculine
-            feature = FEATURES[(index * 3) % len(FEATURES)]
-            title = f"{label} {adjective} {feature} à {neighborhood.name}"
-            lng = neighborhood.centroid.x + rng.uniform(-0.006, 0.006)
-            lat = neighborhood.centroid.y + rng.uniform(-0.005, 0.005)
-            base_month = {
-                PropertyType.STUDIO: 550,
-                PropertyType.APARTMENT: 750 + 250 * bedrooms,
-                PropertyType.VILLA: 3200,
-                PropertyType.ROOM: 380,
-            }[ptype]
-            monthly = Decimal(base_month + rng.randrange(-100, 200, 50))
-            nightly = Decimal(int(monthly / 14))
+        lng = neighborhood.centroid.x + rng.uniform(-0.006, 0.006)
+        lat = neighborhood.centroid.y + rng.uniform(-0.005, 0.005)
+        with transaction.atomic():
             prop = Property.objects.create(
                 host=host,
-                title=title[:140],
-                description=DESCRIPTION.format(
-                    title=title,
-                    neighborhood=neighborhood.name,
-                    kind=label.lower() if ptype != PropertyType.APARTMENT else "appartement",
-                    surface=surface,
-                    bedrooms=bedrooms,
-                    bathrooms=bathrooms,
-                ),
-                property_type=ptype,
-                rooms_label=label if label.startswith("S+") else "",
-                bedrooms=bedrooms,
-                bathrooms=bathrooms,
-                surface_m2=surface,
-                floor=rng.randrange(0, 6),
-                has_elevator=rng.random() > 0.4,
+                title=spec["title"][:140],
+                description=spec["description"],
+                property_type=spec["type"],
+                rooms_label=spec["label"],
+                bedrooms=spec["bedrooms"],
+                bathrooms=spec["bathrooms"],
+                surface_m2=spec["surface"],
+                floor=spec["floor"],
+                has_elevator=spec["elevator"],
                 furnished=True,
                 city=neighborhood.city,
                 neighborhood=neighborhood,
-                address_private=f"{rng.randrange(1, 90)} rue {rng.choice(['des Jasmins', 'Habib Bourguiba', 'de Carthage', 'Ibn Khaldoun'])}, {neighborhood.name}",
+                address_private=f"{rng.randrange(1, 90)} {rng.choice(STREETS)}, {neighborhood.name}",
                 location=Point(lng, lat, srid=4326),
                 location_precision=LocationPrecision.APPROXIMATE,
-                max_guests=guests,
+                max_guests=spec["guests"],
                 status=PropertyStatus.PUBLISHED,
-                verification_level=VerificationLevel.SELECTION
-                if index % 5 == 0
-                else VerificationLevel.VERIFIED,
+                verification_level=spec["level"],
                 verified_at=timezone.now() - timedelta(days=rng.randrange(3, 90)),
                 verified_by=admin,
-                verification_notes="[seed] bien de démonstration",
-                condition_grade=rng.choice(list(ConditionGrade.values)),
-                charges_included=rng.random() > 0.5,
-                monthly_charges_estimate=Decimal(rng.choice([60, 80, 100, 120])),
-                deposit_months=rng.choice([1, 1, 2]),
-                min_lease_months=rng.choice([1, 1, 3, 6]),
-                distance_notes=rng.choice(
-                    [
-                        {"ESPRIT": "8 min à pied", "Métro Ligne 2": "5 min"},
-                        {"Centre-ville": "15 min en voiture", "Supermarché": "3 min à pied"},
-                        {"Plage": "10 min à pied", "Faculté de médecine": "12 min en bus"},
-                    ]
-                ),
-                house_rules={"smoking": False, "pets": rng.random() > 0.7, "parties": False},
-                published_at=timezone.now() - timedelta(days=rng.randrange(1, 60)),
+                verification_notes=tag,
+                condition_grade=spec["grade"],
+                charges_included=spec["charges_included"],
+                monthly_charges_estimate=Decimal(spec["charges"]),
+                deposit_months=spec["deposit"],
+                min_lease_months=spec["min_lease"],
+                distance_notes=spec["distances"],
+                house_rules=spec["rules"],
+                published_at=timezone.now() - timedelta(days=rng.randrange(1, 60), hours=index),
             )
-            prop.amenities.set(rng.sample(amenities, k=rng.randrange(4, 9)))
-            PricingPlan.objects.create(
-                property=prop,
-                rental_mode=RentalMode.MONTHLY,
-                price=monthly,
-                min_duration=prop.min_lease_months,
-                max_duration=11,
-            )
-            if ptype != PropertyType.ROOM:
+            prop.amenities.set([amenities[code] for code in spec["amenities"]])
+            if spec["monthly"] is not None:
+                PricingPlan.objects.create(
+                    property=prop,
+                    rental_mode=RentalMode.MONTHLY,
+                    price=Decimal(spec["monthly"]),
+                    min_duration=spec["min_lease"],
+                    max_duration=11,
+                )
+            if spec["nightly"] is not None:
                 PricingPlan.objects.create(
                     property=prop,
                     rental_mode=RentalMode.NIGHTLY,
-                    price=nightly,
-                    min_duration=2,
+                    price=Decimal(spec["nightly"]),
+                    min_duration=3 if spec["type"] == "villa" else 2,
                     max_duration=30,
                 )
-            if index % 3 == 0:
+            if spec["yearly"] is not None:
                 PricingPlan.objects.create(
-                    property=prop, rental_mode=RentalMode.YEARLY, price=monthly - Decimal(100)
+                    property=prop, rental_mode=RentalMode.YEARLY, price=Decimal(spec["yearly"])
                 )
-            if with_photos:
-                for order in range(1, 5):
-                    photo = PropertyPhoto(
-                        property=prop,
-                        order=order,
-                        is_cover=order == 1,
-                        alt_text=f"{title} - photo {order}",
-                        taken_by_team=True,
-                        width=1600,
-                        height=1200,
-                    )
-                    photo.original.save(
-                        "seed.jpg",
-                        placeholder_image(
-                            f"{title} #{order}", COLORS[(index + order) % len(COLORS)]
-                        ),
-                        save=False,
-                    )
-                    photo.save()
-                    generate_photo_variants(photo.pk)
-            created += 1
-        return existing + created
+            if bank is not None:
+                self._attach_photos(prop, spec, bank, index)
+        self.stdout.write(f"  + {prop.title}")
+        return True
+
+    def _attach_photos(
+        self, prop: Property, spec: SeedProperty, bank: PhotoBank, index: int
+    ) -> None:
+        used: set[str] = set()
+        for position, category in enumerate(PHOTO_PLANS[spec["plan"]]):
+            entry = bank.take(category, used)
+            used.add(entry["file"])
+            alts = PHOTO_ALT[category]
+            alt = alts[(index + position) % len(alts)]
+            data = (PHOTOS_DIR / entry["file"]).read_bytes()
+            upload = SimpleUploadedFile(entry["file"], data, content_type="image/jpeg")
+            # Pipeline réel : validation + ré-encodage, original privé, variantes WebP via Celery.
+            services.add_photo(prop, upload=upload, alt_text=alt, taken_by_team=True)
+
+    def _wait_for_variants(self, host: User, timeout: int) -> None:
+        if settings.CELERY_TASK_ALWAYS_EAGER:
+            return
+        pending = PropertyPhoto.objects.filter(
+            property__host=host, property__verification_notes__startswith=SEED_TAG, variants={}
+        )
+        deadline = time.monotonic() + timeout
+        remaining = pending.count()
+        while remaining and time.monotonic() < deadline:
+            self.stdout.write(f"  … {remaining} variante(s) WebP en attente du worker Celery")
+            time.sleep(3)
+            remaining = pending.count()
+        if remaining:
+            self.stderr.write(
+                self.style.WARNING(
+                    f"{remaining} photo(s) sans variantes après {timeout} s : le worker Celery "
+                    "tourne-t-il ? Les variantes seront générées dès qu'il traitera la file."
+                )
+            )
+
+    # ------------------------------------------------------------------ leads, contenus
 
     def _seed_leads(self, staff: User) -> None:
         for source, url, title, price, city, phone in LEADS:

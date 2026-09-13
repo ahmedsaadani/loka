@@ -34,7 +34,8 @@ Détails : [docs/architecture.md](docs/architecture.md), [docs/data-model.md](do
 ```bash
 cp .env.example .env
 make dev        # build + démarrage de la stack
-make seed       # villes, quartiers, 25 biens de démo, comptes de test
+python scripts/fetch_seed_photos.py   # banque de photos de démo (Unsplash, une seule fois)
+make seed       # villes, quartiers, 33 biens de démo avec photos, comptes de test
 ```
 
 | Service | URL |
@@ -79,7 +80,7 @@ Le fichier `apps/web/.env.local` (non versionné) pointe vers `http://localhost:
 | `make dev` / `make down` / `make clean` | Démarrer, arrêter, arrêter et purger les volumes |
 | `make logs` | Logs de tous les services |
 | `make migrate` / `make makemigrations` | Migrations Django |
-| `make seed` | Données de démo |
+| `make seed` | Données de démo (33 biens, vraies photos libres de droits ; `make seed-reset` pour repartir de zéro). Nécessite la banque `apps/api/seed/photos/` : `python scripts/fetch_seed_photos.py` (voir `apps/api/seed/photos/CREDITS.md`, ADR 0010) |
 | `make types` | Régénère les types TS depuis le schéma OpenAPI |
 | `make lint` | ruff, mypy, eslint, prettier, tsc |
 | `make test` | pytest + vitest |

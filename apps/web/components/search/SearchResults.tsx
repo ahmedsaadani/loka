@@ -179,7 +179,7 @@ export function SearchResults({ initial, cities, amenities, initialParams }: Pro
             {loading ? t.common.loading : `${data.count} ${t.search.results}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Tabs
             value={filters.rental_mode}
             onValueChange={(v) => updateFilters({ ...filters, rental_mode: v })}
@@ -196,7 +196,7 @@ export function SearchResults({ initial, cities, amenities, initialParams }: Pro
             value={filters.ordering}
             onValueChange={(v) => updateFilters({ ...filters, ordering: v })}
           >
-            <SelectTrigger className="w-[160px]" aria-label={t.search.sort}>
+            <SelectTrigger className="w-[150px]" aria-label={t.search.sort}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
