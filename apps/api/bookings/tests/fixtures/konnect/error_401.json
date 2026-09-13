@@ -1,0 +1,9 @@
+{
+  "errors": [
+    {
+      "code": "401",
+      "target": "x-api-key",
+      "message": "Unauthorized: invalid or missing API key"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 from typing import Any
 
 from django.conf import settings
@@ -16,8 +17,9 @@ from rest_framework.views import APIView
 
 from accounts.serializers import SignedUrlSerializer
 from bookings import services
-from bookings.models import Booking, BookingRequest, BookingStatus
+from bookings.models import Booking, BookingRequest, BookingStatus, Payment
 from bookings.payments.base import get_payment_provider
+from bookings.payments.konnect import KonnectError
 from bookings.serializers import (
     BookingConfirmedSerializer,
     BookingRequestCreateSerializer,
@@ -285,6 +287,50 @@ class MockPaymentWebhookView(APIView):
             raise PermissionDenied(str(exc)) from exc
         payment = services.handle_payment_result(result)
         return Response(PaymentSerializer(payment).data)
+
+
+class KonnectPaymentWebhookView(APIView):
+    """
+    Webhook Konnect : `GET|POST /webhooks/konnect/?payment_ref=...&token=...`.
+    Le payload n'est pas signé : le prestataire relit l'état via l'API Konnect
+    (voir `KonnectPaymentProvider.parse_webhook`). Le jeton secret filtre les pings forgés.
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes: list[type] = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
+
+    @extend_schema(exclude=True)
+    def get(self, request: Request) -> Response:
+        return self._handle(request)
+
+    @extend_schema(exclude=True)
+    def post(self, request: Request) -> Response:
+        return self._handle(request)
+
+    def _handle(self, request: Request) -> Response:
+        if settings.PAYMENT_PROVIDER != "konnect":
+            raise PermissionDenied("Webhook Konnect désactivé.")
+        expected = str(settings.KONNECT_WEBHOOK_TOKEN)
+        given = str(request.query_params.get("token", ""))
+        if not expected or not hmac.compare_digest(given, expected):
+            raise PermissionDenied("Jeton de webhook invalide.")
+        body = request.data if isinstance(request.data, dict) else {}
+        payment_ref = request.query_params.get("payment_ref") or body.get("payment_ref", "")
+        provider = get_payment_provider()
+        try:
+            result = provider.parse_webhook({"payment_ref": payment_ref}, {})
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except KonnectError as exc:
+            # Konnect réessaiera ; on ne confirme jamais sans avoir relu l'état.
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+        try:
+            payment = services.handle_payment_result(result)
+        except Payment.DoesNotExist:
+            return Response({"detail": "Paiement inconnu."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status": payment.status})
 
 
 class MockPaymentSignView(APIView):

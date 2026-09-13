@@ -54,4 +54,8 @@ def get_payment_provider() -> PaymentProvider:
         from bookings.payments.mock import MockPaymentProvider
 
         return MockPaymentProvider()
+    if name == "konnect":
+        from bookings.payments.konnect import KonnectPaymentProvider
+
+        return KonnectPaymentProvider()
     raise NotImplementedError(f"Prestataire de paiement non implémenté : {name}")
