@@ -14,6 +14,25 @@ from core.storages import public_storage
 logger = logging.getLogger(__name__)
 
 
+@shared_task(name="notifications.tasks.revalidate_front", autoretry_for=(OSError,), max_retries=3)
+def revalidate_front(paths: list[str], tags: list[str] | None = None) -> bool:
+    """Demande au front Next.js de régénérer des pages ISR (publication, pause, prix)."""
+    url = settings.REVALIDATE_URL
+    if not url or not settings.REVALIDATE_SECRET or not url.startswith(("http://", "https://")):
+        return False
+    import json
+    import urllib.request
+
+    payload = json.dumps({"paths": paths, "tags": tags or []}).encode()
+    headers = {
+        "Content-Type": "application/json",
+        "X-Revalidate-Secret": settings.REVALIDATE_SECRET,
+    }
+    request = urllib.request.Request(url, data=payload, method="POST", headers=headers)  # noqa: S310
+    with urllib.request.urlopen(request, timeout=10) as response:  # noqa: S310  # nosec B310
+        return response.status == 200
+
+
 @shared_task(name="notifications.tasks.send_email", autoretry_for=(Exception,), max_retries=3)
 def send_email(to: str, subject: str, text: str, html: str) -> None:
     message = EmailMultiAlternatives(subject, text, settings.DEFAULT_FROM_EMAIL, [to])

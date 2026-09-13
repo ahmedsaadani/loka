@@ -26,6 +26,8 @@ COPY . .
 # Les variables NEXT_PUBLIC_* sont figées au build.
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Le build ne contacte jamais l'API : les pages ISR sont générées à la demande au runtime.
+ENV API_INTERNAL_URL=http://build.invalid
 RUN npm run build
 
 # ---------- prod ----------

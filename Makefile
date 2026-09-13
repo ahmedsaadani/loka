@@ -12,7 +12,7 @@ help: ## Affiche cette aide
 dev: ## Démarre toute la stack (postgres, redis, minio, api, worker, web)
 	$(COMPOSE) up -d --build
 	@echo "web  : http://localhost:3000"
-	@echo "api  : http://localhost:8000/api/v1/docs/"
+	@echo "api  : http://localhost:18000/api/v1/docs/"
 	@echo "minio: http://localhost:9001 (loka / loka-minio-secret)"
 
 down: ## Arrête la stack (conserve les volumes)

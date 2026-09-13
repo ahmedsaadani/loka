@@ -108,6 +108,21 @@ class RejectSerializer(serializers.Serializer[Any]):
     reason = serializers.CharField(max_length=255)
 
 
+class PasswordResetRequestSerializer(serializers.Serializer[Any]):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer[Any]):
+    uid = serializers.CharField(max_length=64)
+    token = serializers.CharField(max_length=128)
+    password = serializers.CharField(write_only=True, min_length=10, max_length=128)
+
+
+class PasswordChangeSerializer(serializers.Serializer[Any]):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=10, max_length=128)
+
+
 class SignedUrlSerializer(serializers.Serializer[Any]):
     url = serializers.URLField()
     expires_in = serializers.IntegerField()

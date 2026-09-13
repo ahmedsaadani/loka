@@ -23,7 +23,7 @@ switch ($Target) {
   "dev" {
     Compose up -d --build
     Write-Host "web  : http://localhost:3000"
-    Write-Host "api  : http://localhost:8000/api/v1/docs/"
+    Write-Host "api  : http://localhost:18000/api/v1/docs/"
     Write-Host "minio: http://localhost:9001 (loka / loka-minio-secret)"
   }
   "down"  { Compose down }

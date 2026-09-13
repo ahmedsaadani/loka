@@ -26,6 +26,17 @@ audit_logger = logging.getLogger("loka.audit")
 MIN_PHOTOS_TO_SUBMIT = 3
 
 
+def revalidate_property_pages(prop: Property) -> None:
+    """Régénère la fiche, la ville, le quartier et l'accueil côté front."""
+    from core.tasks import enqueue
+    from notifications.tasks import revalidate_front
+
+    paths = ["/", f"/logement/{prop.slug}", f"/location/{prop.city.slug}"]
+    if prop.neighborhood is not None:
+        paths.append(f"/location/{prop.city.slug}/{prop.neighborhood.slug}")
+    enqueue(revalidate_front, paths, [f"property:{prop.slug}", f"city:{prop.city.slug}"])
+
+
 class PropertyNotReady(ValidationError):
     """Le bien ne remplit pas les conditions pour être soumis / publié."""
 
@@ -69,12 +80,14 @@ def withdraw_to_draft(prop: Property, *, by: User) -> Property:
 @transaction.atomic
 def pause(prop: Property, *, by: User, note: str = "") -> Property:
     transition(prop, PropertyStatus.PAUSED, actor=by, note=note)
+    revalidate_property_pages(prop)
     return prop
 
 
 @transaction.atomic
 def resume(prop: Property, *, by: User) -> Property:
     transition(prop, PropertyStatus.PUBLISHED, actor=by)
+    revalidate_property_pages(prop)
     return prop
 
 
@@ -129,6 +142,7 @@ def publish(
         },
     )
     audit_logger.info("property_published pk=%s by=%s level=%s", prop.pk, by.pk, verification_level)
+    revalidate_property_pages(prop)
     return prop
 
 
@@ -231,4 +245,6 @@ def upsert_pricing_plan(
             "is_active": is_active,
         },
     )
+    if prop.status == PropertyStatus.PUBLISHED:
+        revalidate_property_pages(prop)
     return plan

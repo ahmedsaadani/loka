@@ -342,6 +342,13 @@ BOOKING_FREE_CANCELLATION_DAYS = 7
 
 PAYMENT_PROVIDER = env("PAYMENT_PROVIDER", "mock")
 
+# Revalidation ISR du front Next.js après publication / changement de prix (vide = désactivé).
+REVALIDATE_URL = env("REVALIDATE_URL", "")
+REVALIDATE_SECRET = env("REVALIDATE_SECRET", "")
+# Lien de réinitialisation de mot de passe (page front), valable PASSWORD_RESET_TIMEOUT secondes.
+PASSWORD_RESET_URL = env("PASSWORD_RESET_URL", f"{SITE_URL}/reinitialisation")
+PASSWORD_RESET_TIMEOUT = 60 * 60
+
 # ------------------------------------------------------------------ logging
 LOGGING = {
     "version": 1,

@@ -114,7 +114,17 @@ PROPERTY_TEMPLATES = [
     (PropertyType.ROOM, "Chambre", 1, 1, 18, 1),
 ]
 
-ADJECTIVES = ["lumineux", "calme", "moderne", "rénové", "spacieux", "cosy", "élégant"]
+# (masculin, féminin) : Studio / S+x / Appartement sont masculins, Villa / Chambre féminins.
+ADJECTIVES = [
+    ("lumineux", "lumineuse"),
+    ("calme", "calme"),
+    ("moderne", "moderne"),
+    ("rénové", "rénovée"),
+    ("spacieux", "spacieuse"),
+    ("cosy", "cosy"),
+    ("élégant", "élégante"),
+]
+FEMININE_LABELS = {"Villa", "Chambre"}
 FEATURES = [
     "avec balcon",
     "vue dégagée",
@@ -297,7 +307,8 @@ class Command(BaseCommand):
             ptype, label, bedrooms, bathrooms, surface, guests = PROPERTY_TEMPLATES[
                 index % len(PROPERTY_TEMPLATES)
             ]
-            adjective = ADJECTIVES[index % len(ADJECTIVES)]
+            masculine, feminine = ADJECTIVES[index % len(ADJECTIVES)]
+            adjective = feminine if label in FEMININE_LABELS else masculine
             feature = FEATURES[(index * 3) % len(FEATURES)]
             title = f"{label} {adjective} {feature} à {neighborhood.name}"
             lng = neighborhood.centroid.x + rng.uniform(-0.006, 0.006)

@@ -29,6 +29,9 @@ from accounts.serializers import (
     IdentityDocumentStaffSerializer,
     IdentityDocumentUploadSerializer,
     LoginSerializer,
+    PasswordChangeSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     RegisterSerializer,
     RejectSerializer,
     SignedUrlSerializer,
@@ -146,6 +149,43 @@ class LogoutView(APIView):
         response = Response(status=status.HTTP_204_NO_CONTENT)
         _clear_refresh_cookie(response)
         return response
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
+
+    @extend_schema(request=PasswordResetRequestSerializer, responses={202: None})
+    def post(self, request: Request) -> Response:
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.request_password_reset(serializer.validated_data["email"])
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
+
+    @extend_schema(request=PasswordResetConfirmSerializer, responses={200: AccessTokenSerializer})
+    def post(self, request: Request) -> Response:
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = services.confirm_password_reset(**serializer.validated_data)
+        return _token_response(user)
+
+
+class PasswordChangeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=PasswordChangeSerializer, responses={204: None})
+    def post(self, request: Request) -> Response:
+        serializer = PasswordChangeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.change_password(current_user(request), **serializer.validated_data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MeView(APIView):

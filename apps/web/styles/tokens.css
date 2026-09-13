@@ -1,0 +1,47 @@
+/*
+  Design tokens Loka. Direction : clair, chaleureux, crédible.
+  Deux variantes d'accent : A (terracotta, appliquée) et B (bleu méditerranée, en réserve).
+  Pour basculer : remplacer les valeurs --primary / --ring / --accent par celles de la variante B.
+*/
+:root {
+  /* Fond blanc cassé, texte anthracite */
+  --background: 40 33% 97%; /* #f9f7f3 */
+  --foreground: 228 6% 16%; /* #26272b */
+  --card: 0 0% 100%;
+  --card-foreground: 228 6% 16%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 228 6% 16%;
+  --muted: 40 20% 93%; /* #f0ede7 */
+  --muted-foreground: 228 5% 46%; /* #6f7178 */
+  --border: 36 16% 86%; /* #e2ddd3 */
+  --input: 36 16% 86%;
+
+  /* Variante A : terracotta (appliquée) */
+  --primary: 18 60% 45%; /* #b8552e */
+  --primary-foreground: 0 0% 100%;
+  --accent: 24 70% 94%; /* #fbeee6 */
+  --accent-foreground: 18 60% 32%;
+  --ring: 18 60% 45%;
+
+  /* Variante B : bleu méditerranée profond (réserve)
+  --primary: 205 62% 30%;        #1d5b7c
+  --primary-foreground: 0 0% 100%;
+  --accent: 205 50% 93%;         #e3eef5
+  --accent-foreground: 205 62% 22%;
+  --ring: 205 62% 30%;
+  */
+
+  --secondary: 40 20% 93%;
+  --secondary-foreground: 228 6% 16%;
+  --destructive: 0 62% 45%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Vert sobre pour « Vérifié » */
+  --verified: 152 38% 30%; /* #2f6a4c */
+  --verified-foreground: 0 0% 100%;
+  --verified-soft: 150 30% 92%; /* #e4f0e9 */
+
+  --radius: 0.75rem;
+  --font-sans:
+    "Inter", "Noto Sans Arabic", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}

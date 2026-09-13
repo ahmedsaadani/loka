@@ -22,7 +22,6 @@ out/
 *.tsbuildinfo
 apps/web/playwright-report/
 apps/web/test-results/
-apps/web/lib/api/schema.d.ts
 
 # Docker
 .docker-data/
