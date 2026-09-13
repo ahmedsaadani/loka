@@ -31,3 +31,6 @@ apps/web/test-results/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Next.js generated
+apps/web/next-env.d.ts
