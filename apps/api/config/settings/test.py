@@ -21,7 +21,7 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 PAYMENT_PROVIDER = "mock"
 # Jamais d'appel HTTP vers le front pendant les tests (les tests dédiés mockent urlopen).
 REVALIDATE_URL = ""
-REVALIDATE_SECRET = ""
+REVALIDATE_SECRET = ""  # nosec B105 - vide : webhook désactivé en tests
 JWT_COOKIE_SECURE = False
 
 # Limites larges par défaut ; les tests de rate limiting surchargent explicitement.
