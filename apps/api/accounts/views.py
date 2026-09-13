@@ -116,7 +116,7 @@ class RefreshView(APIView):
 
     permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "auth"
+    throttle_scope = "refresh"
 
     @extend_schema(request=None, responses={200: AccessTokenSerializer})
     def post(self, request: Request) -> Response:

@@ -9,7 +9,7 @@ Le front génère ses types depuis le schéma (`make types` → `apps/web/lib/ap
 - Identifiants publics : `public_id` (UUID) ou `slug`. Jamais d'ID séquentiel.
 - Erreurs : `{"detail": str, "code": str, "errors"?: {champ: [messages]}}`. Codes utiles : `validation_error`, `not_found`, `permission_denied`, `invalid_transition` (409), `unavailable` (409), `throttled` (429).
 - Listes : paginées (`page`, `page_size` ≤ 50) → `{count, next, previous, results}`.
-- Rate limiting : anonymes 120/min, connectés 600/min, `auth` 10/min, `register` 5/h, `booking_request` 10/h, `lead_import` 5/h, `upload` 60/h.
+- Rate limiting : anonymes 120/min, connectés 600/min, `auth` (connexion, reset) 20/min, `refresh` 120/min, `register` 5/h, `booking_request` 10/h, `lead_import` 5/h, `upload` 60/h.
 
 ## Endpoints
 

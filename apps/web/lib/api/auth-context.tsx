@@ -51,6 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Marqueur d'hydratation (utilisé par les tests Playwright pour attendre l'interactivité).
+    document.documentElement.dataset.hydrated = "1";
     let cancelled = false;
     (async () => {
       const token = await refreshAccessToken();

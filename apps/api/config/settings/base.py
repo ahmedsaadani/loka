@@ -218,7 +218,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "120/min",
         "user": "600/min",
-        "auth": "10/min",
+        "auth": "20/min",
+        "refresh": "120/min",
         "register": "5/hour",
         "booking_request": "10/hour",
         "lead_import": "5/hour",
