@@ -2,8 +2,6 @@ import type { NextConfig } from "next";
 
 const publicApi = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:18000/api/v1";
 const s3Public = process.env.NEXT_PUBLIC_S3_PUBLIC_URL ?? "http://localhost:9000";
-// CSP : une source avec chemin ne matche que ce chemin exact, on autorise donc l'origine entière.
-const apiOrigin = new URL(publicApi).origin;
 
 function hostOf(url: string): { protocol: "http" | "https"; hostname: string; port: string } {
   const parsed = new URL(url);
@@ -16,6 +14,8 @@ function hostOf(url: string): { protocol: "http" | "https"; hostname: string; po
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // NEXT_DIST_DIR permet un build de prod local (tests, Lighthouse) sans écraser le .next du dev.
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   reactStrictMode: true,
   poweredByHeader: false,
   images: {
@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
     ],
     deviceSizes: [360, 640, 768, 1024, 1280, 1536],
   },
+  // La Content-Security-Policy (nonce par requête) est posée par middleware.ts.
   async headers() {
     return [
       {
@@ -39,20 +40,11 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline'",
-              `img-src 'self' data: blob: ${s3Public} https://*.amazonaws.com https://tile.openstreetmap.org https://*.tile.openstreetmap.org`,
-              "font-src 'self' data:",
-              `connect-src 'self' ${apiOrigin} https://tile.openstreetmap.org https://*.tile.openstreetmap.org`,
-              "worker-src 'self' blob:",
-              "frame-ancestors 'none'",
-            ].join("; "),
-          },
         ],
+      },
+      {
+        source: "/_next/static/(.*)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
     ];
   },

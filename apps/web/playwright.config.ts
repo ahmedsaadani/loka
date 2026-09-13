@@ -15,6 +15,7 @@ export default defineConfig({
     baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
+    video: process.env.E2E_RECORD_VIDEO ? "retain-on-failure" : "off",
     locale: "fr-FR",
   },
   projects: [

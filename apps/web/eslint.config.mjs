@@ -9,6 +9,7 @@ const config = [
     ignores: [
       "node_modules/**",
       ".next/**",
+      ".next-prod/**",
       "lib/api/schema.d.ts",
       "playwright-report/**",
       "test-results/**",

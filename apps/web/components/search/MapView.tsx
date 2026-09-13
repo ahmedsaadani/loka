@@ -4,7 +4,7 @@ import maplibregl from "maplibre-gl";
 import { useEffect, useRef } from "react";
 
 import type { PropertyCard } from "@/lib/api/types";
-import { DEFAULT_ZOOM, OSM_STYLE, TUNISIA_CENTER } from "@/lib/map";
+import { DEFAULT_ZOOM, getMapStyle, MAP_UNAVAILABLE_MESSAGE, TUNISIA_CENTER } from "@/lib/map";
 import { formatTnd } from "@/lib/utils";
 
 import { pickPlan } from "../listing/PriceTag";
@@ -57,9 +57,14 @@ export function MapView({
 
   useEffect(() => {
     if (!container.current || mapRef.current) return;
+    const style = getMapStyle();
+    if (!style) {
+      container.current.textContent = MAP_UNAVAILABLE_MESSAGE;
+      return;
+    }
     const map = new maplibregl.Map({
       container: container.current,
-      style: OSM_STYLE,
+      style,
       center: TUNISIA_CENTER,
       zoom: DEFAULT_ZOOM,
       attributionControl: { compact: true },

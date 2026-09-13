@@ -5,7 +5,8 @@ const ORDER = ["nightly", "monthly", "yearly"] as const;
 
 function durationLabel(plan: PricingPlan): string {
   const unit = plan.rental_mode === "nightly" ? "nuit" : "mois";
-  if (plan.rental_mode === "yearly") return "Bail de 12 mois";
+  if (plan.rental_mode === "yearly")
+    return `Bail de 12 mois${plan.monthly_equivalent ? ` · soit ${formatTnd(plan.monthly_equivalent)} / mois` : ""}`;
   const min = `min. ${plan.min_duration} ${unit}${plan.min_duration > 1 ? "s" : ""}`;
   return plan.max_duration
     ? `${min} · max. ${plan.max_duration} ${unit}${plan.max_duration > 1 ? "s" : ""}`

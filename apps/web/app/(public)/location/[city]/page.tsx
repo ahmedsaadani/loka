@@ -17,9 +17,6 @@ import { t } from "@/lib/i18n";
 import { breadcrumbJsonLd, faqJsonLd, pageMetadata } from "@/lib/seo";
 import { formatTnd } from "@/lib/utils";
 
-export const revalidate = 600;
-export const dynamicParams = true;
-
 interface Params {
   city: string;
 }
@@ -36,18 +33,8 @@ async function loadCity(slug: string): Promise<CityDetail | null> {
   }
 }
 
-export async function generateStaticParams(): Promise<Params[]> {
-  try {
-    const page = await serverApi.get<Paginated<CitySummary>>(
-      "/geo/cities/",
-      { page_size: 50 },
-      { revalidate: 3600 },
-    );
-    return page.results.map((c) => ({ city: c.slug }));
-  } catch {
-    return [];
-  }
-}
+// CSP par nonce (ADR 0009) : rendu à la demande ; les appels API restent en cache (revalidate).
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { city: slug } = await params;

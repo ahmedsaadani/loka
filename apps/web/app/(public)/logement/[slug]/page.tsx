@@ -30,9 +30,6 @@ import { t } from "@/lib/i18n";
 import { accommodationJsonLd, breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
 import { CONDITION_LABEL, formatDate, formatTnd, PROPERTY_TYPE_LABEL } from "@/lib/utils";
 
-export const revalidate = 300;
-export const dynamicParams = true;
-
 interface Params {
   slug: string;
 }
@@ -49,18 +46,8 @@ async function loadProperty(slug: string): Promise<PropertyDetail | null> {
   }
 }
 
-export async function generateStaticParams(): Promise<Params[]> {
-  try {
-    const page = await serverApi.get<Paginated<PropertyCardData>>(
-      "/listings/properties/",
-      { page_size: 50 },
-      { revalidate: 3600 },
-    );
-    return page.results.map((p) => ({ slug: p.slug }));
-  } catch {
-    return [];
-  }
-}
+// CSP par nonce (ADR 0009) : rendu à la demande ; les appels API restent en cache (revalidate).
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;

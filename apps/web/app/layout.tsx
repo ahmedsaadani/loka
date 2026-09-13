@@ -6,6 +6,10 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 import "@/styles/globals.css";
 
+// CSP par nonce (ADR 0009) : toute page pré-rendue statiquement n'aurait pas de nonce et ses scripts
+// seraient bloqués. Le rendu est donc dynamique pour toute l'application ; les appels API restent en cache.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: `${SITE_NAME} · Logements vérifiés en Tunisie`, template: `%s | ${SITE_NAME}` },

@@ -61,7 +61,12 @@ const READINESS_LABEL: Record<string, string> = {
   location: "Position sur la carte",
   photos: "Photos",
   pricing_plans: "Tarifs",
+  identity: "Identité vérifiée",
 };
+
+// ADR 0007 : ces champs déclenchent une nouvelle validation quand le bien est publié.
+const REVIEW_FIELDS_HELP =
+  "Titre, description, type, pièces, surface, capacité, adresse, position, équipements, distances et photos.";
 
 interface InfoForm {
   title: string;
@@ -160,7 +165,10 @@ export function PropertyWizard({ publicId }: { publicId: string }) {
     if (property && !form) setForm(toForm(property));
   }, [property, form]);
 
-  const editable = property?.status === "draft" || property?.status === "rejected";
+  // ADR 0007 : modifiable dans tous les états ; un bien publié ou en pause repasse en
+  // validation si un champ descriptif change (l'ancienne version reste en ligne).
+  const editable = Boolean(property);
+  const reviewOnChange = property?.status === "published" || property?.status === "paused";
 
   async function save(payload: PropertyWrite, successMessage = "Enregistré."): Promise<boolean> {
     setSaving(true);
@@ -293,10 +301,18 @@ export function PropertyWizard({ publicId }: { publicId: string }) {
         </div>
       </div>
 
-      {!editable && (
+      {reviewOnChange && (
         <p className="rounded-lg border bg-muted/60 p-3 text-sm text-muted-foreground">
-          Cette annonce n&apos;est pas modifiable dans son état actuel. Toute modification passe par
-          un retour en brouillon puis une nouvelle validation par Loka.
+          Les prix, le calendrier, les règles et les conditions (charges, caution, durée minimale)
+          s&apos;appliquent immédiatement. Les autres modifications ({REVIEW_FIELDS_HELP}) sont
+          vérifiées par Loka avant publication : votre annonce reste en ligne dans sa version
+          actuelle pendant la vérification.
+        </p>
+      )}
+      {property.is_serving_snapshot && (
+        <p className="rounded-lg border border-primary/40 bg-accent p-3 text-sm">
+          Modifications en cours de vérification par Loka. La version précédente de l&apos;annonce
+          reste visible et réservable jusqu&apos;à la validation.
         </p>
       )}
 

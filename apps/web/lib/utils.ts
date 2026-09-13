@@ -23,7 +23,7 @@ export function formatEur(amount: number | string): string {
 export const RENTAL_MODE_LABEL: Record<string, string> = {
   nightly: "nuit",
   monthly: "mois",
-  yearly: "mois (bail annuel)",
+  yearly: "an",
 };
 
 export const RENTAL_MODE_TITLE: Record<string, string> = {

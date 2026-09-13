@@ -17,9 +17,6 @@ import { t } from "@/lib/i18n";
 import { breadcrumbJsonLd, faqJsonLd, pageMetadata } from "@/lib/seo";
 import { formatTnd } from "@/lib/utils";
 
-export const revalidate = 600;
-export const dynamicParams = true;
-
 interface Params {
   city: string;
   neighborhood: string;
@@ -38,25 +35,8 @@ async function loadNeighborhood(city: string, slug: string): Promise<Neighborhoo
   }
 }
 
-export async function generateStaticParams(): Promise<Params[]> {
-  try {
-    const cities = await serverApi.get<Paginated<{ slug: string }>>(
-      "/geo/cities/",
-      { page_size: 50 },
-      { revalidate: 3600 },
-    );
-    const details = await Promise.all(
-      cities.results.map((c) =>
-        serverApi.get<CityDetail>(`/geo/cities/${c.slug}/`, undefined, { revalidate: 3600 }),
-      ),
-    );
-    return details.flatMap((city) =>
-      city.neighborhoods.map((n) => ({ city: city.slug, neighborhood: n.slug })),
-    );
-  } catch {
-    return [];
-  }
-}
+// CSP par nonce (ADR 0009) : rendu à la demande ; les appels API restent en cache (revalidate).
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { city, neighborhood: slug } = await params;

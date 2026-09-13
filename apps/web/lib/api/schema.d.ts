@@ -735,6 +735,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content/{key}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Page éditoriale publiée (CGU, confidentialité, contact), en Markdown brut. */
+        get: operations["content_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/geo/cities/": {
         parameters: {
             query?: never;
@@ -2072,11 +2089,16 @@ export interface components {
             readonly rental_mode: components["schemas"]["RentalModeEnum"];
             /**
              * Format: decimal
-             * @description TND
+             * @description TND par nuit, par mois, ou par an pour le plan annuel (ADR 0007)
              */
             readonly price: string;
             /** Format: double */
             readonly price_eur: number;
+            /**
+             * Format: double
+             * @description Plan annuel : prix / 12, indicatif (ADR 0007).
+             */
+            readonly monthly_equivalent: number | null;
             /** @description Nuits (nightly) ou mois (monthly). Ignoré pour yearly (12). */
             readonly min_duration: number;
             /** @description Nuits ou mois. Vide = pas de maximum. */
@@ -2093,6 +2115,7 @@ export interface components {
             /** @default true */
             is_active: boolean;
         };
+        /** @description Pendant une revue de modifications, le public voit l'instantané publié (ADR 0007). */
         PropertyCard: {
             /** Format: uuid */
             readonly public_id: string;
@@ -2123,6 +2146,7 @@ export interface components {
             /** @description {"ESPRIT": "8 min à pied", "Métro Ligne 2": "5 min"} */
             readonly distance_notes: unknown;
         };
+        /** @description Pendant une revue de modifications, le public voit l'instantané publié (ADR 0007). */
         PropertyDetail: {
             /** Format: uuid */
             readonly public_id: string;
@@ -2227,6 +2251,8 @@ export interface components {
             readonly readiness_errors: {
                 [key: string]: string;
             };
+            readonly is_publicly_visible: boolean;
+            readonly is_serving_snapshot: boolean;
             /** Format: date-time */
             readonly published_at: string | null;
             /** Format: date-time */
@@ -2295,6 +2321,8 @@ export interface components {
             readonly readiness_errors: {
                 [key: string]: string;
             };
+            readonly is_publicly_visible: boolean;
+            readonly is_serving_snapshot: boolean;
             /** Format: date-time */
             readonly published_at: string | null;
             /** Format: date-time */
@@ -2405,6 +2433,8 @@ export interface components {
             unit_label: string;
             /** Format: decimal */
             unit_price: string;
+            /** Format: decimal */
+            monthly_equivalent: string | null;
             /** Format: decimal */
             subtotal: string;
             /** Format: decimal */
@@ -3624,6 +3654,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Payment"];
+                };
+            };
+        };
+    };
+    content_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
                 };
             };
         };

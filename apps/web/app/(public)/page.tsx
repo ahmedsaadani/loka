@@ -10,7 +10,8 @@ import { t } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/seo";
 import { formatTnd } from "@/lib/utils";
 
-export const revalidate = 300;
+// CSP par nonce (ADR 0009) : rendu à la demande ; les appels API restent en cache (revalidate).
+export const dynamic = "force-dynamic";
 
 export const metadata = pageMetadata({
   title: "Loka · Location d'appartements vérifiés en Tunisie, à la nuit, au mois ou à l'année",

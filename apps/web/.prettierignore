@@ -4,3 +4,5 @@ lib/api/schema.d.ts
 playwright-report
 test-results
 package-lock.json
+.next-prod
+.lighthouse

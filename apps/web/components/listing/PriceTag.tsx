@@ -38,13 +38,22 @@ export function PriceTag({ plans, preferredMode, size = "sm", showEur = false, c
           / {RENTAL_MODE_LABEL[plan.rental_mode]}
         </span>
       </span>
+      {plan.rental_mode === "yearly" && plan.monthly_equivalent && (
+        <span className="text-xs text-muted-foreground">
+          soit {formatTnd(plan.monthly_equivalent)} / mois
+        </span>
+      )}
       {showEur && (
         <span className="text-xs text-muted-foreground">≈ {formatEur(plan.price_eur)}</span>
       )}
       {others.length > 0 && size === "sm" && (
         <span className="text-xs text-muted-foreground">
           {others
-            .map((p) => `${formatTnd(p.price)} / ${RENTAL_MODE_LABEL[p.rental_mode]}`)
+            .map((p) =>
+              p.rental_mode === "yearly" && p.monthly_equivalent
+                ? `${formatTnd(p.price)} / an (soit ${formatTnd(p.monthly_equivalent)} / mois)`
+                : `${formatTnd(p.price)} / ${RENTAL_MODE_LABEL[p.rental_mode]}`,
+            )
             .join(" · ")}
         </span>
       )}

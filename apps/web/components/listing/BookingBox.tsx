@@ -215,8 +215,9 @@ export function BookingBox({ slug, plans, maxGuests, className }: Props) {
           <dl className="space-y-1" data-testid="quote">
             <div className="flex justify-between">
               <dt className="text-muted-foreground">
-                {formatTnd(quote.unit_price)} × {quote.units} {quote.unit_label}
-                {quote.units > 1 && quote.unit_label === "nuit" ? "s" : ""}
+                {quote.rental_mode === "yearly"
+                  ? `Prix annuel (12 mois)${quote.monthly_equivalent ? `, soit ${formatTnd(quote.monthly_equivalent)} / mois` : ""}`
+                  : `${formatTnd(quote.unit_price)} × ${quote.units} ${quote.unit_label}${quote.units > 1 && quote.unit_label === "nuit" ? "s" : ""}`}
               </dt>
               <dd>{formatTnd(quote.subtotal)}</dd>
             </div>

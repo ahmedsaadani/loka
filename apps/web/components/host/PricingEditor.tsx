@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, ApiRequestError } from "@/lib/api/client";
 import type { PricingPlan, RentalMode } from "@/lib/api/types";
-import { RENTAL_MODE_TITLE } from "@/lib/utils";
+import { formatTnd, RENTAL_MODE_TITLE } from "@/lib/utils";
 
 interface Props {
   basePath: string;
@@ -30,8 +30,8 @@ const MODES: Array<{ mode: RentalMode; unit: string; help: string }> = [
   },
   {
     mode: "yearly",
-    unit: "mois (bail de 12 mois)",
-    help: "Loyer mensuel pour un engagement d'un an. Frais 3 % déduits de l'acompte.",
+    unit: "an",
+    help: "Prix total pour un bail de 12 mois (l'équivalent mensuel est affiché à titre indicatif). Frais 3 % déduits de l'acompte, qui vaut un douzième du prix annuel.",
   },
 ];
 
@@ -137,6 +137,11 @@ function PlanForm({
           disabled={!enabled}
           data-testid={`plan-${mode}-price`}
         />
+        {mode === "yearly" && Number(price) > 0 && (
+          <p className="text-xs text-muted-foreground">
+            soit {formatTnd(Number(price) / 12)} / mois
+          </p>
+        )}
       </div>
       {mode !== "yearly" && (
         <div className="grid grid-cols-2 gap-2">

@@ -4,7 +4,7 @@ import maplibregl from "maplibre-gl";
 import { useEffect, useRef } from "react";
 
 import type { LatLng } from "@/lib/api/types";
-import { OSM_STYLE } from "@/lib/map";
+import { getMapStyle, MAP_UNAVAILABLE_MESSAGE } from "@/lib/map";
 
 interface Props {
   location: LatLng;
@@ -18,9 +18,14 @@ export function PropertyMap({ location, approximate, className }: Props) {
 
   useEffect(() => {
     if (!container.current) return;
+    const style = getMapStyle();
+    if (!style) {
+      container.current.textContent = MAP_UNAVAILABLE_MESSAGE;
+      return;
+    }
     const map = new maplibregl.Map({
       container: container.current,
-      style: OSM_STYLE,
+      style,
       center: [location.lng, location.lat],
       zoom: approximate ? 14 : 15.5,
       attributionControl: { compact: true },

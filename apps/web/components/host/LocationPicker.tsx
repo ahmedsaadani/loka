@@ -4,7 +4,7 @@ import maplibregl from "maplibre-gl";
 import { useEffect, useRef } from "react";
 
 import type { LatLng } from "@/lib/api/types";
-import { OSM_STYLE, TUNISIA_CENTER } from "@/lib/map";
+import { getMapStyle, MAP_UNAVAILABLE_MESSAGE, TUNISIA_CENTER } from "@/lib/map";
 
 interface Props {
   value: LatLng | null;
@@ -24,9 +24,14 @@ export function LocationPicker({ value, onChange, center, disabled }: Props) {
   useEffect(() => {
     if (!container.current || mapRef.current) return;
     const initial = value ?? center;
+    const style = getMapStyle();
+    if (!style) {
+      container.current.textContent = MAP_UNAVAILABLE_MESSAGE;
+      return;
+    }
     const map = new maplibregl.Map({
       container: container.current,
-      style: OSM_STYLE,
+      style,
       center: initial ? [initial.lng, initial.lat] : TUNISIA_CENTER,
       zoom: value ? 15 : 12,
       attributionControl: { compact: true },

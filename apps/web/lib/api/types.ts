@@ -136,6 +136,8 @@ export interface PricingPlan {
   rental_mode: RentalMode;
   price: string;
   price_eur: string;
+  /** Plan annuel : prix / 12, indicatif (ADR 0007). */
+  monthly_equivalent: string | null;
   min_duration: number;
   max_duration: number | null;
   is_active: boolean;
@@ -203,6 +205,7 @@ export interface Quote {
   units: number;
   unit_label: string;
   unit_price: string;
+  monthly_equivalent: string | null;
   subtotal: string;
   fee_rate: string;
   fee: string;
@@ -251,6 +254,8 @@ export interface PropertyHost {
   pricing_plans: PricingPlan[];
   amenities: Amenity[];
   readiness_errors: Record<string, string>;
+  is_publicly_visible: boolean;
+  is_serving_snapshot: boolean;
   published_at: string | null;
   created_at: string;
   updated_at: string;
