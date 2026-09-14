@@ -8,6 +8,12 @@ x-api-common: &api-common
     dockerfile: ../../infra/docker/api.Dockerfile
     target: dev
   env_file: .env
+  environment:
+    # Purge du cache du front après publication / seed (voir .env.example).
+    REVALIDATE_URL: ${REVALIDATE_URL:-http://host.docker.internal:3000/api/revalidate}
+    REVALIDATE_SECRET: ${REVALIDATE_SECRET:-dev-revalidate-secret}
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
   volumes:
     - ./apps/api:/app
   depends_on:
