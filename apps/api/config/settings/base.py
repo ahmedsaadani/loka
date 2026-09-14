@@ -278,6 +278,9 @@ JWT_COOKIE_PATH = "/api/v1/auth/"
 # Vide par défaut : en production, aucune origine tant qu'elle n'est pas explicitement
 # fournie (le garde-fou de prod refuse toute origine http://). En dev, .env la renseigne.
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "")
+# Origines autorisées par expression régulière (utile quand l'URL du front porte un suffixe
+# imprévisible, ex. déploiement d'aperçu). Une entrée par ligne ou séparée par des virgules.
+CORS_ALLOWED_ORIGIN_REGEXES = env_list("CORS_ALLOWED_ORIGIN_REGEXES", "")
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 X_FRAME_OPTIONS = "DENY"

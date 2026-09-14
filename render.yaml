@@ -101,18 +101,42 @@ services:
         value: loka-public
       - key: S3_BUCKET_PRIVATE
         value: loka-private
-      # URL publique HTTPS du service loka-minio (https://loka-minio-XXXX.onrender.com).
+      # URL publique HTTPS du service loka-minio (stockage).
       - key: S3_ENDPOINT_URL
-        sync: false
+        value: https://loka-minio.onrender.com
       - key: S3_PUBLIC_ENDPOINT_URL
-        sync: false
-      # Origine du front Vercel (https://loka-XXXX.vercel.app), à renseigner après son déploiement.
+        value: https://loka-minio.onrender.com
+      # Front sur Render (loka-web) : origine exacte + regex tolérante à un suffixe d'URL.
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://loka-web.onrender.com
+      - key: CORS_ALLOWED_ORIGIN_REGEXES
+        value: '^https://loka-web[a-z0-9-]*\.onrender\.com$'
       - key: SITE_URL
-        sync: false
-      # Purge du cache Next après publication ; partagé avec le front. Laisser vide au 1er déploiement.
+        value: https://loka-web.onrender.com
+      # Revalidation ISR désactivée sur ce test (pages en rendu dynamique). Laisser vide.
       - key: REVALIDATE_URL
         sync: false
       - key: REVALIDATE_SECRET
         generateValue: true
+
+  # ---------------------------------------------------------------- Front Next.js
+  - type: web
+    name: loka-web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./infra/docker/web.Dockerfile
+    dockerContext: ./apps/web
+    healthCheckPath: /
+    envVars:
+      # Variables NEXT_PUBLIC_* figées au build (Render les passe comme build args Docker).
+      - key: NEXT_PUBLIC_API_URL
+        value: https://loka-api-qhix.onrender.com/api/v1
+      - key: API_INTERNAL_URL
+        value: https://loka-api-qhix.onrender.com/api/v1
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://loka-web.onrender.com
+      - key: NEXT_PUBLIC_S3_PUBLIC_URL
+        value: https://loka-minio.onrender.com
+      # Fond de carte OpenStreetMap (aucune clé MapTiler nécessaire pour ce test).
+      - key: NEXT_PUBLIC_MAP_FALLBACK_OSM
+        value: "1"
