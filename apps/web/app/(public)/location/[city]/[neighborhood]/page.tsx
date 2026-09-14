@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { JsonLd } from "@/components/JsonLd";
 import { PropertyCard } from "@/components/listing/PropertyCard";
+import { Markdown } from "@/components/content/Markdown";
 import { Button } from "@/components/ui/button";
 import { ApiRequestError, serverApi } from "@/lib/api/client";
 import type {
@@ -104,7 +105,9 @@ export default async function NeighborhoodPage({ params }: { params: Promise<Par
             : ""}
         </p>
         {neighborhood.intro_text && (
-          <p className="mt-4 leading-relaxed">{neighborhood.intro_text}</p>
+          <div className="mt-4 max-w-3xl">
+            <Markdown source={neighborhood.intro_text} />
+          </div>
         )}
         <Button className="mt-5" asChild>
           <Link href={`/recherche?city=${citySlug}&neighborhood=${slug}`}>

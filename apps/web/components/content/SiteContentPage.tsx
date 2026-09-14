@@ -15,7 +15,7 @@ interface Props {
   fallbackTitle: string;
 }
 
-/** Page éditoriale servie depuis l'admin (SiteContent). ISR 10 min, repli si l'API est absente. */
+/** Page éditoriale servie depuis l'admin (SiteContent), cache API 10 min, repli si l'API est absente. */
 export async function SiteContentPage({ contentKey, fallbackTitle }: Props) {
   const content = await serverApi
     .get<SiteContent>(`/content/${contentKey}/`, undefined, { revalidate: 600 })
@@ -29,14 +29,20 @@ export async function SiteContentPage({ contentKey, fallbackTitle }: Props) {
           <p className="mt-2 text-sm text-muted-foreground">
             Dernière mise à jour : {formatDate(content.updated_at)}
           </p>
-          {content.needs_writing && (
-            <p className="mt-4 rounded-lg border border-primary/40 bg-accent p-3 text-sm">
-              Texte provisoire : le contenu définitif est en cours de rédaction.
+          {content.needs_writing || !content.body ? (
+            // Un texte encore marqué « à rédiger » n'est jamais affiché : l'API le masque.
+            <p className="mt-6 rounded-lg border border-primary/40 bg-accent p-4 text-sm">
+              Cette page est en cours de rédaction. Pour toute question, écrivez-nous à{" "}
+              <a className="underline" href="mailto:contact@loka.tn">
+                contact@loka.tn
+              </a>
+              .
             </p>
+          ) : (
+            <div className="mt-8">
+              <Markdown source={content.body} />
+            </div>
           )}
-          <div className="mt-8">
-            <Markdown source={content.body} />
-          </div>
         </>
       ) : (
         <p className="mt-6 text-muted-foreground">Contenu indisponible pour le moment.</p>

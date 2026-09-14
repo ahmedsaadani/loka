@@ -1,0 +1,23 @@
+{% extends "admin/index.html" %}
+{% load i18n loka_admin %}
+
+{% block sidebar %}
+<div id="content-related">
+  {% pending_content_count as pending_content_count %}
+  <div class="module" id="loka-content-module">
+    <h2>Contenus du site</h2>
+    <p style="padding: 8px 12px 0;">
+      {% if pending_content_count %}
+        <strong>{{ pending_content_count }}</strong> contenu{{ pending_content_count|pluralize }} encore marqué{{ pending_content_count|pluralize }}
+        « [À RÉDIGER] » (masqué{{ pending_content_count|pluralize }} sur le site).
+      {% else %}
+        Tous les textes du site sont rédigés.
+      {% endif %}
+    </p>
+    <p style="padding: 8px 12px 12px;">
+      <a class="button" href="{% url 'admin-content-to-write' %}">Contenus à rédiger</a>
+    </p>
+  </div>
+</div>
+{{ block.super }}
+{% endblock %}

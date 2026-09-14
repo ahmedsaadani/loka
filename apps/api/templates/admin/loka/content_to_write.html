@@ -1,0 +1,117 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+  .ctw-layout { display: grid; gap: 24px; grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); align-items: start; }
+  @media (max-width: 1000px) { .ctw-layout { grid-template-columns: 1fr; } }
+  .ctw-list table { width: 100%; }
+  .ctw-list tr.selected td { background: var(--selected-row, #fff3e6); }
+  .ctw-editor { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 1200px) { .ctw-editor { grid-template-columns: 1fr; } }
+  .ctw-editor textarea { width: 100%; min-height: 420px; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; box-sizing: border-box; }
+  .ctw-preview { border: 1px solid var(--border-color, #ddd); border-radius: 6px; padding: 16px 20px; min-height: 420px; background: var(--body-bg, #fff); line-height: 1.55; }
+  .ctw-preview h2 { font-size: 1.3em; margin: 1.2em 0 .4em; } .ctw-preview h3 { font-size: 1.1em; margin: 1em 0 .3em; }
+  .ctw-preview ul { padding-left: 1.4em; } .ctw-preview p { margin: 0 0 .8em; }
+  .ctw-preview.pending { outline: 2px solid #ba2121; }
+  .ctw-help { color: var(--body-quiet-color, #666); font-size: 12px; margin-top: 6px; }
+  .ctw-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: #ffe9d6; color: #8a3b17; }
+  .ctw-empty { padding: 24px; border: 1px dashed var(--border-color, #ddd); border-radius: 6px; color: var(--body-quiet-color, #666); }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a> &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<p>
+  Tous les textes encore marqués <code>{{ placeholder }}</code>. Tant qu'un texte porte ce marqueur,
+  <strong>le site public masque la section</strong> ; il apparaît dès que vous enregistrez un texte sans le marqueur.
+</p>
+
+<div class="ctw-layout">
+  <div class="ctw-list module">
+    <h2>{{ entries|length }} contenu{{ entries|length|pluralize }} à rédiger</h2>
+    {% if entries %}
+    <table>
+      <thead><tr><th>Élément</th><th>Champ</th><th></th></tr></thead>
+      <tbody>
+      {% for e in entries %}
+        <tr{% if selected and selected.key == e.key %} class="selected"{% endif %}>
+          <td>{{ e.object_label }}</td>
+          <td>{{ e.label }}{% if e.markdown %} <span class="ctw-badge">Markdown</span>{% endif %}</td>
+          <td><a class="button" href="?key={{ e.key|urlencode }}">Rédiger</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="ctw-empty">Tout est rédigé. Rien à faire ici.</p>
+    {% endif %}
+  </div>
+
+  <div class="module" style="padding: 16px;">
+    {% if selected %}
+      <h2>{{ selected.object_label }} — {{ selected.label }}
+        <small style="font-weight: normal;">(<a href="{{ selected.admin_url }}">fiche complète</a>)</small>
+      </h2>
+      <form method="post" id="ctw-form">
+        {% csrf_token %}
+        <input type="hidden" name="key" value="{{ selected.key }}">
+        <div class="ctw-editor">
+          <div>
+            <label for="ctw-value"><strong>Texte</strong></label>
+            <textarea id="ctw-value" name="value" data-markdown="{{ selected.markdown|yesno:'1,0' }}" data-placeholder="{{ placeholder }}" spellcheck="true">{{ selected.value }}</textarea>
+            {% if selected.markdown %}
+            <p class="ctw-help">Markdown supporté : <code>## Titre</code>, <code>### Sous-titre</code>, <code>- élément de liste</code>, <code>**gras**</code>, <code>[lien](https://…)</code>. Le HTML n'est pas interprété.</p>
+            {% else %}
+            <p class="ctw-help">Texte simple (balises et Markdown non interprétés). Titre SEO : 60 caractères max conseillés ; description : 160.</p>
+            {% endif %}
+          </div>
+          <div>
+            <strong>Aperçu</strong>
+            <div id="ctw-preview" class="ctw-preview" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="submit-row" style="margin-top: 16px;">
+          <input type="submit" class="default" value="Enregistrer et publier">
+          <a class="button" href="{% url 'admin-content-to-write' %}" style="margin-left: 8px;">Annuler</a>
+        </div>
+      </form>
+      <script>
+      (function () {
+        var textarea = document.getElementById("ctw-value");
+        var preview = document.getElementById("ctw-preview");
+        var markdown = textarea.dataset.markdown === "1";
+        var csrf = document.querySelector("#ctw-form [name=csrfmiddlewaretoken]").value;
+        var timer = null;
+        function escapeHtml(s) { return s.replace(/[&<>"]/g, function (c) { return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]; }); }
+        function render() {
+          var value = textarea.value;
+          var pending = value.indexOf(textarea.dataset.placeholder) !== -1;
+          if (!markdown) {
+            preview.innerHTML = "<p>" + escapeHtml(value) + "</p><p class=\"ctw-help\">" + value.length + " caractère(s)</p>";
+            preview.classList.toggle("pending", pending);
+            return;
+          }
+          var body = new URLSearchParams({ value: value });
+          fetch("{{ preview_url }}", { method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf, "Content-Type": "application/x-www-form-urlencoded" }, body: body })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { preview.innerHTML = data.html || "<p class=\"ctw-help\">(vide)</p>"; preview.classList.toggle("pending", data.pending); })
+            .catch(function () { preview.innerHTML = "<p class=\"ctw-help\">Aperçu indisponible.</p>"; });
+        }
+        textarea.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(render, 250); });
+        render();
+      })();
+      </script>
+    {% else %}
+      <p class="ctw-empty">Choisissez un contenu dans la liste pour le rédiger. L'aperçu à droite reproduit exactement le rendu du site.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

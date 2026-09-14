@@ -35,4 +35,6 @@ class SiteContentAdmin(admin.ModelAdmin):
 
     @admin.display(boolean=True, description="À rédiger")
     def needs_writing(self, obj: SiteContent) -> bool:
-        return "[À RÉDIGER]" in obj.title or "[À RÉDIGER]" in obj.body
+        from core.content import is_placeholder
+
+        return is_placeholder(obj.title) or is_placeholder(obj.body)

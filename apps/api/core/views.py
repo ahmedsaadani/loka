@@ -83,16 +83,19 @@ class SiteContentView(APIView):
     def get(self, request: Request, key: str) -> Response:
         from django.shortcuts import get_object_or_404
 
+        from core.content import is_placeholder, public_text
         from core.models import SiteContent
 
         content = get_object_or_404(SiteContent, key=key, is_published=True)
+        needs_writing = is_placeholder(content.body) or is_placeholder(content.title)
+        # Un texte encore marqué [À RÉDIGER] n'est jamais servi : le front masque la section.
         return Response(
             {
                 "key": content.key,
-                "title": content.title,
-                "body": content.body,
+                "title": public_text(content.title) or content.key,
+                "body": public_text(content.body),
                 "updated_at": content.updated_at,
-                "needs_writing": "[À RÉDIGER]" in content.body or "[À RÉDIGER]" in content.title,
+                "needs_writing": needs_writing,
             }
         )
 

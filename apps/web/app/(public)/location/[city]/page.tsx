@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { JsonLd } from "@/components/JsonLd";
 import { PropertyCard } from "@/components/listing/PropertyCard";
+import { Markdown } from "@/components/content/Markdown";
 import { Button } from "@/components/ui/button";
 import { ApiRequestError, serverApi } from "@/lib/api/client";
 import type {
@@ -99,7 +100,11 @@ export default async function CityPage({ params }: { params: Promise<Params> }) 
             ? ` · ${t.city.averageNight} ${formatTnd(city.avg_nightly_price)}`
             : ""}
         </p>
-        {city.intro_text && <p className="mt-4 leading-relaxed">{city.intro_text}</p>}
+        {city.intro_text && (
+          <div className="mt-4 max-w-3xl">
+            <Markdown source={city.intro_text} />
+          </div>
+        )}
         <div className="mt-5 flex flex-wrap gap-2">
           <Button asChild>
             <Link href={`/recherche?city=${city.slug}`}>{t.city.seeListings}</Link>
