@@ -275,7 +275,9 @@ JWT_COOKIE_SAMESITE = "Lax"
 JWT_COOKIE_PATH = "/api/v1/auth/"
 
 # ------------------------------------------------------------------ CORS / CSRF
-CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+# Vide par défaut : en production, aucune origine tant qu'elle n'est pas explicitement
+# fournie (le garde-fou de prod refuse toute origine http://). En dev, .env la renseigne.
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "")
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 X_FRAME_OPTIONS = "DENY"
