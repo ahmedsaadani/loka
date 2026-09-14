@@ -45,6 +45,8 @@ class HostCalendarViewSet(viewsets.GenericViewSet[AvailabilityBlock]):
         )
 
     def get_queryset(self) -> QuerySet[AvailabilityBlock]:
+        if getattr(self, "swagger_fake_view", False):
+            return AvailabilityBlock.objects.none()
         horizon = timezone.localdate() - timedelta(days=30)
         return (
             AvailabilityBlock.objects.filter(property=self._property(), end__gte=horizon)
@@ -89,7 +91,18 @@ class HostCalendarViewSet(viewsets.GenericViewSet[AvailabilityBlock]):
         sync_external_calendar.delay(calendar.pk)
         return Response(ExternalCalendarSerializer(calendar).data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(request=None, responses={204: None})
+    @extend_schema(
+        methods=["DELETE"],
+        request=None,
+        responses={204: None},
+        operation_id="availability_host_properties_calendar_destroy",
+    )
+    @extend_schema(
+        methods=["POST"],
+        request=None,
+        responses={202: None},
+        operation_id="availability_host_properties_calendar_resync",
+    )
     @action(detail=False, methods=["delete", "post"], url_path=r"calendars/(?P<calendar_id>\d+)")
     def calendar_detail(
         self,

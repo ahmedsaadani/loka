@@ -163,6 +163,8 @@ class HostPropertyViewSet(viewsets.ModelViewSet[Property]):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self) -> QuerySet[Property]:
+        if getattr(self, "swagger_fake_view", False):
+            return Property.objects.none()
         return (
             Property.objects.filter(host=current_user(self.request))
             .select_related("city", "neighborhood")

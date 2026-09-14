@@ -216,6 +216,8 @@ class IdentityDocumentViewSet(
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_queryset(self) -> QuerySet[IdentityDocument]:
+        if getattr(self, "swagger_fake_view", False):
+            return IdentityDocument.objects.none()
         qs = IdentityDocument.objects.select_related("user")
         if is_staff_user(self.request.user):
             status_filter = self.request.query_params.get("status")

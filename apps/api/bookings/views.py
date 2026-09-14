@@ -53,6 +53,8 @@ class TravelerRequestViewSet(
     lookup_field = "public_id"
 
     def get_queryset(self) -> QuerySet[BookingRequest]:
+        if getattr(self, "swagger_fake_view", False):
+            return BookingRequest.objects.none()
         return (
             BookingRequest.objects.filter(traveler=current_user(self.request))
             .select_related("property", "property__city", "traveler", "booking")
@@ -100,6 +102,8 @@ class TravelerBookingViewSet(
     lookup_field = "public_id"
 
     def get_queryset(self) -> QuerySet[Booking]:
+        if getattr(self, "swagger_fake_view", False):
+            return Booking.objects.none()
         return (
             Booking.objects.filter(traveler=current_user(self.request))
             .select_related("property", "property__city", "traveler", "host", "host__host_profile")
@@ -169,6 +173,8 @@ class HostRequestViewSet(
     filterset_fields = {"status": ["exact"], "property__public_id": ["exact"]}
 
     def get_queryset(self) -> QuerySet[BookingRequest]:
+        if getattr(self, "swagger_fake_view", False):
+            return BookingRequest.objects.none()
         return (
             BookingRequest.objects.filter(property__host=current_user(self.request))
             .select_related("property", "property__city", "traveler", "booking")
@@ -203,6 +209,8 @@ class HostBookingViewSet(
     filterset_fields = {"status": ["exact"], "property__public_id": ["exact"]}
 
     def get_queryset(self) -> QuerySet[Booking]:
+        if getattr(self, "swagger_fake_view", False):
+            return Booking.objects.none()
         return (
             Booking.objects.filter(host=current_user(self.request))
             .select_related("property", "property__city", "traveler", "host", "host__host_profile")

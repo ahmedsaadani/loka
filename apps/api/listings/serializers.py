@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Any
 
 from django.contrib.gis.geos import Point
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from bookings.pricing import monthly_equivalent, to_eur
@@ -24,6 +25,14 @@ from listings.models import (
 # ----------------------------------------------------------------- briques
 
 
+@extend_schema_field(
+    {
+        "type": "object",
+        "properties": {"lat": {"type": "number"}, "lng": {"type": "number"}},
+        "nullable": True,
+        "required": ["lat", "lng"],
+    }
+)
 class LatLngField(serializers.Field[Point | None, dict[str, float], dict[str, float] | None, Any]):
     """{lat, lng} <-> Point. `approximate=True` arrondit à ~100 m pour le public."""
 
