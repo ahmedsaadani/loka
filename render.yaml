@@ -1,0 +1,120 @@
+# Blueprint Render — déploiement de TEST du back-end Loka (API + PostGIS + Redis + MinIO).
+# Le front Next.js est déployé séparément sur Vercel (voir docs/deploy-test.md).
+#
+# Mise en service : Render Dashboard > New > Blueprint > connecter github.com/<vous>/loka.
+# Render lit ce fichier et crée les 4 services. Renseigner ensuite les variables marquées
+# « sync: false » (URL MinIO, origine Vercel) une fois les URLs connues — tout est détaillé
+# dans docs/deploy-test.md.
+#
+# Choix assumés pour rester gratuit :
+#  - Celery en mode synchrone (CELERY_TASK_ALWAYS_EAGER=1) : pas de worker séparé (payant).
+#  - MinIO sans disque : les fichiers sont perdus à la mise en veille ; relancer `seed`.
+#    Pour des photos persistantes, attacher un disque au service loka-minio (option payante).
+
+databases:
+  - name: loka-db
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  # ---------------------------------------------------------------- Redis (cache + broker)
+  - type: redis
+    name: loka-redis
+    plan: free
+    ipAllowList: [] # accès interne uniquement
+
+  # ---------------------------------------------------------------- Stockage S3 (MinIO)
+  - type: web
+    name: loka-minio
+    runtime: docker
+    plan: free
+    dockerfilePath: ./infra/deploy/render/minio.Dockerfile
+    dockerContext: .
+    healthCheckPath: /minio/health/live
+    # Pour rendre les photos persistantes (option payante), décommenter :
+    # disk:
+    #   name: loka-minio-data
+    #   mountPath: /data
+    #   sizeGB: 1
+    envVars:
+      - key: MINIO_ROOT_USER
+        generateValue: true
+      - key: MINIO_ROOT_PASSWORD
+        generateValue: true
+      - key: S3_BUCKET_PUBLIC
+        value: loka-public
+      - key: S3_BUCKET_PRIVATE
+        value: loka-private
+
+  # ---------------------------------------------------------------- API Django (gunicorn)
+  - type: web
+    name: loka-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./infra/docker/api.Dockerfile
+    dockerContext: ./apps/api
+    healthCheckPath: /api/v1/health/
+    # Extension PostGIS + migrations + fichiers statiques avant chaque mise en ligne.
+    preDeployCommand: >
+      sh -c "psql \"$DATABASE_URL\" -c 'CREATE EXTENSION IF NOT EXISTS postgis' &&
+      python manage.py migrate --noinput &&
+      python manage.py collectstatic --noinput"
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: ENVIRONMENT
+        value: prod
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_DEBUG
+        value: "0"
+      # Si l'API refuse de démarrer sur la clé, remplacer par `openssl rand -hex 32` (64 car.).
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      # L'hôte public Render (RENDER_EXTERNAL_HOSTNAME) est ajouté automatiquement par les réglages.
+      - key: DJANGO_ALLOWED_HOSTS
+        value: localhost,127.0.0.1
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: loka-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: loka-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: loka-redis
+          property: connectionString
+      - key: S3_ACCESS_KEY
+        fromService:
+          type: web
+          name: loka-minio
+          envVarKey: MINIO_ROOT_USER
+      - key: S3_SECRET_KEY
+        fromService:
+          type: web
+          name: loka-minio
+          envVarKey: MINIO_ROOT_PASSWORD
+      - key: S3_BUCKET_PUBLIC
+        value: loka-public
+      - key: S3_BUCKET_PRIVATE
+        value: loka-private
+      # URL publique HTTPS du service loka-minio (https://loka-minio-XXXX.onrender.com).
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_PUBLIC_ENDPOINT_URL
+        sync: false
+      # Origine du front Vercel (https://loka-XXXX.vercel.app), à renseigner après son déploiement.
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: SITE_URL
+        sync: false
+      # Purge du cache Next après publication ; partagé avec le front. Laisser vide au 1er déploiement.
+      - key: REVALIDATE_URL
+        sync: false
+      - key: REVALIDATE_SECRET
+        generateValue: true

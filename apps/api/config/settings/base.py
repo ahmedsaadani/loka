@@ -41,6 +41,11 @@ def env_list(key: str, default: str = "") -> list[str]:
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = False
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+# Hôte public fourni par la plateforme (Render) : ajouté automatiquement pour éviter une
+# variable manuelle avec un suffixe imprévisible.
+_platform_host = env("RENDER_EXTERNAL_HOSTNAME", "")
+if _platform_host and _platform_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_platform_host)
 SITE_URL = env("SITE_URL", "http://localhost:3000")
 ENVIRONMENT = env("ENVIRONMENT", "dev")
 
@@ -108,6 +113,9 @@ DATABASES = {
     "default": dj_database_url.config(
         env="DATABASE_URL",
         default="postgis://loka:loka@localhost:5432/loka",
+        # Toujours le backend PostGIS, même si DATABASE_URL est en `postgresql://`
+        # (fourni tel quel par les hébergeurs managés : Render, Railway, Supabase…).
+        engine="django.contrib.gis.db.backends.postgis",
         conn_max_age=60,
         conn_health_checks=True,
     )
@@ -147,6 +155,11 @@ S3_BUCKET_PRIVATE = env("S3_BUCKET_PRIVATE", "loka-private")
 S3_PRIVATE_URL_EXPIRY_SECONDS = env_int("S3_PRIVATE_URL_EXPIRY_SECONDS", 300)
 
 _public_host = urlparse(S3_PUBLIC_ENDPOINT_URL)
+# Domaine servant les variantes WebP publiques. Par défaut `hôte/bucket` (MinIO, S3 path-style).
+# Surchargeable pour un CDN ou un bucket public à domaine dédié (Cloudflare R2, front CDN…).
+S3_PUBLIC_CUSTOM_DOMAIN = env(
+    "S3_PUBLIC_CUSTOM_DOMAIN", f"{_public_host.netloc}/{S3_BUCKET_PUBLIC}"
+)
 _s3_common = {
     "access_key": S3_ACCESS_KEY,
     "secret_key": S3_SECRET_KEY,
@@ -165,7 +178,7 @@ STORAGES = {
             **_s3_common,
             "bucket_name": S3_BUCKET_PUBLIC,
             "querystring_auth": False,
-            "custom_domain": f"{_public_host.netloc}/{S3_BUCKET_PUBLIC}",
+            "custom_domain": S3_PUBLIC_CUSTOM_DOMAIN,
             "url_protocol": f"{_public_host.scheme}:",
             "object_parameters": {"CacheControl": "max-age=31536000, public"},
         },
@@ -289,7 +302,10 @@ CACHES = {
 }
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", "redis://localhost:6379/1")
 CELERY_RESULT_BACKEND = None
-CELERY_TASK_ALWAYS_EAGER = False
+# Exécution synchrone des tâches (aucun worker Celery séparé) : utile pour un déploiement
+# de test à un seul service. En production avec un worker dédié, laisser à False.
+CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", False)
+CELERY_TASK_EAGER_PROPAGATES = False
 CELERY_TASK_ACKS_LATE = True
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULE = {
