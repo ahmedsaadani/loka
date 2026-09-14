@@ -174,7 +174,13 @@ Variables CI à définir (Settings › CI/CD › Variables, *protected* + *maske
 | `DEPLOY_SSH_KEY` | Clé privée **base64** : `base64 -w0 ~/.ssh/loka_deploy` |
 | `DEPLOY_KNOWN_HOSTS` | `ssh-keyscan -H <IP_VPS> 2>/dev/null` |
 | `DEPLOY_DOMAIN` | Domaine public (URL de l'environnement `production`) |
-| `NEXT_PUBLIC_API_URL` | `https://DOMAIN/api/v1` (build de l'image web) |
+| `NEXT_PUBLIC_API_URL` | `https://DOMAIN/api/v1` (figée au build de l'image web) |
+| `NEXT_PUBLIC_SITE_URL` | `https://DOMAIN` |
+| `NEXT_PUBLIC_S3_PUBLIC_URL` | URL publique du bucket des photos (même valeur que `S3_PUBLIC_ENDPOINT_URL`) |
+| `NEXT_PUBLIC_MAPTILER_KEY` | Clé MapTiler ; sans elle la carte de recherche affiche « carte indisponible » |
+| `NEXT_PUBLIC_SENTRY_DSN` | DSN Sentry du front (optionnel) |
+
+Ces cinq variables `NEXT_PUBLIC_*` sont inlinées dans le bundle navigateur au moment du build : les changer impose de reconstruire l'image web (nouveau pipeline), pas seulement de modifier `.env.prod`.
 
 ### À la main
 
@@ -265,7 +271,10 @@ Commencer par `p=none` pendant une semaine pour lire les rapports `rua`, puis pa
 - [ ] Paiement : `PAYMENT_PROVIDER=konnect`, `KONNECT_SANDBOX=0`, clés live, un paiement réel de faible montant testé puis remboursé ; webhooks joignables.
 - [ ] Emails : SPF / DKIM / DMARC en place, score mail-tester ≥ 9, `DEFAULT_FROM_EMAIL` sur le domaine.
 - [ ] Textes légaux remplacés (CGU, politique de confidentialité, mentions légales, gestion des données d'identité) et validés.
-- [ ] Comptes : superutilisateur créé avec mot de passe fort, comptes de démo du `seed` absents, accès admin Django limité (tunnel SSH).
+- [ ] Comptes : superutilisateur créé avec mot de passe fort, comptes de démo du `seed` absents, admin Django non exposé ou limité au sous-domaine `admin.DOMAIN` restreint par IP (section « Admin Django »).
+- [ ] Contenus : l'écran admin « Contenus à rédiger » (`/admin/contenus-a-rediger/`) est vide ; tant qu'un texte est marqué `[À RÉDIGER]`, la section est masquée sur le site et `manage.py check --deploy` l'indique.
+- [ ] `REVALIDATE_URL=http://web:3000/api/revalidate` et `REVALIDATE_SECRET` identiques côté api et web (sinon les pages publiques restent en cache jusqu'à 10 min après une publication).
+- [ ] Formulaire « Devenir hôte » testé : le lead apparaît dans le back-office et l'équipe (comptes staff/admin) reçoit l'email.
 - [ ] Limitation de débit vérifiée : `for i in $(seq 1 25); do curl -s -o /dev/null -w '%{http_code}\n' -X POST https://DOMAIN/api/v1/auth/login/; done` renvoie des `429` après la rafale.
 - [ ] Pare-feu ufw actif (22/80/443 uniquement), SSH par clé, fail2ban, mises à jour automatiques.
 - [ ] Sonde d'uptime externe configurée avec alerte ; contact Let's Encrypt valide.
@@ -279,11 +288,18 @@ Commencer par `p=none` pendant une semaine pour lire les rapports `rua`, puis pa
 Après le premier déploiement de cette version, reconstruire l'instantané public des biens déjà publiés (une seule fois) :
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api python manage.py rebuild_snapshots
+lc exec api python manage.py rebuild_snapshots
 ```
 
 Puis vérifier les contenus provisoires :
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api python manage.py check --deploy
+lc exec api python manage.py check --deploy
 ```
+
+### Phase 8 (dernière passe avant déploiement)
+
+- Migration `listings.0003` (retouche automatique des photos, `auto_enhance`) appliquée par `deploy.sh`. Pour appliquer la retouche aux photos déjà en ligne : admin Django › Biens › action « Régénérer les variantes WebP des photos » (ou `lc exec api python manage.py shell -c "..."` sur `notifications.tasks.generate_photo_variants`).
+- Les textes encore marqués `[À RÉDIGER]` sont désormais masqués sur le site ; les rédiger dans l'écran admin « Contenus à rédiger » (cet écran vit dans l'admin Django : voir la section « Admin Django » pour l'exposer).
+- Le formulaire « Devenir hôte » envoie un email à chaque compte staff/admin actif : vérifier `EMAIL_*` et que l'équipe a bien des comptes avec le rôle `staff`.
+- L'image web doit être reconstruite avec les nouvelles variables de build (`NEXT_PUBLIC_MAPTILER_KEY`, `NEXT_PUBLIC_S3_PUBLIC_URL`, …) : voir la table des variables CI en section 3.

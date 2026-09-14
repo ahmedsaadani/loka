@@ -109,7 +109,14 @@ build:api:
 build:web:
   extends: .build-image
   script:
-    - docker build -f infra/docker/web.Dockerfile --target prod --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" -t "$CI_REGISTRY_IMAGE/web:$CI_COMMIT_SHORT_SHA" apps/web
+    - >
+      docker build -f infra/docker/web.Dockerfile --target prod
+      --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL"
+      --build-arg NEXT_PUBLIC_SITE_URL="$NEXT_PUBLIC_SITE_URL"
+      --build-arg NEXT_PUBLIC_S3_PUBLIC_URL="$NEXT_PUBLIC_S3_PUBLIC_URL"
+      --build-arg NEXT_PUBLIC_MAPTILER_KEY="$NEXT_PUBLIC_MAPTILER_KEY"
+      --build-arg NEXT_PUBLIC_SENTRY_DSN="$NEXT_PUBLIC_SENTRY_DSN"
+      -t "$CI_REGISTRY_IMAGE/web:$CI_COMMIT_SHORT_SHA" apps/web
     - docker push "$CI_REGISTRY_IMAGE/web:$CI_COMMIT_SHORT_SHA"
 
 # Déploiement manuel sur le VPS via SSH (voir docs/deploy.md).
@@ -119,7 +126,11 @@ build:web:
 #   DEPLOY_SSH_KEY     : clé privée ed25519 encodée en base64 (`base64 -w0 ~/.ssh/loka_deploy`)
 #   DEPLOY_KNOWN_HOSTS : sortie de `ssh-keyscan -H $DEPLOY_HOST`
 #   DEPLOY_DOMAIN      : domaine public (URL de l'environnement GitLab)
-#   NEXT_PUBLIC_API_URL: https://DOMAIN/api/v1 (utilisée par build:web)
+#   NEXT_PUBLIC_API_URL       : https://DOMAIN/api/v1 (figée au build de l'image web)
+#   NEXT_PUBLIC_SITE_URL      : https://DOMAIN
+#   NEXT_PUBLIC_S3_PUBLIC_URL : URL publique du bucket (= S3_PUBLIC_ENDPOINT_URL), hôte des photos
+#   NEXT_PUBLIC_MAPTILER_KEY  : clé MapTiler (sans elle, la carte affiche « indisponible » en prod)
+#   NEXT_PUBLIC_SENTRY_DSN    : DSN Sentry du front (optionnel)
 # Tests de bout en bout Playwright (desktop + mobile) contre la stack complète en services CI.
 e2e:playwright:
   stage: e2e

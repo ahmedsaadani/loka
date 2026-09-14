@@ -43,7 +43,7 @@ make seed       # villes, quartiers, 33 biens de démo avec photos, comptes de t
 | Site web | http://localhost:3000 |
 | API (docs Swagger) | http://localhost:18000/api/v1/docs/ |
 | Schéma OpenAPI | http://localhost:18000/api/v1/schema/ |
-| Admin Django | http://localhost:18000/admin/ |
+| Admin Django | http://localhost:18000/admin/ (écran « Contenus à rédiger » : /admin/contenus-a-rediger/) |
 | Console MinIO | http://localhost:9001 (`loka` / `loka-minio-secret`) |
 | PostgreSQL (outils locaux) | `localhost:15432`, base `loka`, `loka` / `loka` |
 | Redis (outils locaux) | `localhost:16379` |

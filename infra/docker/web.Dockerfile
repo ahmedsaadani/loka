@@ -23,9 +23,18 @@ RUN npm ci
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Les variables NEXT_PUBLIC_* sont figées au build.
+# Les variables NEXT_PUBLIC_* sont figées au build (inlinées dans le bundle navigateur) :
+# elles doivent être passées en --build-arg par la CI, pas seulement dans .env.prod.
 ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_S3_PUBLIC_URL
+ARG NEXT_PUBLIC_MAPTILER_KEY
+ARG NEXT_PUBLIC_SENTRY_DSN
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+    NEXT_PUBLIC_S3_PUBLIC_URL=$NEXT_PUBLIC_S3_PUBLIC_URL \
+    NEXT_PUBLIC_MAPTILER_KEY=$NEXT_PUBLIC_MAPTILER_KEY \
+    NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 # Le build ne contacte jamais l'API : les pages ISR sont générées à la demande au runtime.
 ENV API_INTERNAL_URL=http://build.invalid
 RUN npm run build
