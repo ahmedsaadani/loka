@@ -54,12 +54,13 @@ services:
     dockerfilePath: ./infra/docker/api.Dockerfile
     dockerContext: ./apps/api
     healthCheckPath: /api/v1/health/
-    # Extension PostGIS + migrations + fichiers statiques avant chaque mise en ligne.
-    preDeployCommand: >
+    # Runtime Docker : le plan gratuit n'accepte ni startCommand ni preDeployCommand.
+    # On enchaîne donc extension PostGIS + migrations + statiques + gunicorn dans dockerCommand.
+    dockerCommand: >
       sh -c "psql \"$DATABASE_URL\" -c 'CREATE EXTENSION IF NOT EXISTS postgis' &&
       python manage.py migrate --noinput &&
-      python manage.py collectstatic --noinput"
-    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+      python manage.py collectstatic --noinput &&
+      gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
     envVars:
       - key: ENVIRONMENT
         value: prod
