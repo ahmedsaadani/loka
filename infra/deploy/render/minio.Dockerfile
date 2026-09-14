@@ -4,9 +4,9 @@
 #
 # ATTENTION : sans disque persistant attaché (option payante Render), les fichiers sont
 # perdus au redémarrage / à la mise en veille du service. Relancer `seed` régénère les photos.
-FROM minio/mc:latest AS mc
+FROM quay.io/minio/mc:latest AS mc
 
-FROM minio/minio:latest
+FROM quay.io/minio/minio:latest
 COPY --from=mc /usr/bin/mc /usr/bin/mc
 COPY infra/deploy/render/minio-entrypoint.sh /entrypoint.sh
 # L'image minio tourne en root ; on rend le script exécutable.
