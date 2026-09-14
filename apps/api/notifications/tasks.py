@@ -9,6 +9,7 @@ from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
 from PIL import Image, ImageOps
 
+from core.imaging import enhance_photo
 from core.storages import public_storage
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,9 @@ def generate_photo_variants(photo_id: int) -> dict[str, str]:
         image = ImageOps.exif_transpose(source) or source
         if image.mode != "RGB":
             image = image.convert("RGB")
+        if photo.auto_enhance:
+            # Retouche en mémoire uniquement : l'original privé reste intact.
+            image = enhance_photo(image)
         for name, (width, height) in settings.PHOTO_VARIANTS.items():
             if name == "og":
                 variant = ImageOps.fit(image, (width, height), Image.Resampling.LANCZOS)

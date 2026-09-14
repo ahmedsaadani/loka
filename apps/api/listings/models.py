@@ -284,6 +284,14 @@ class PropertyPhoto(PublicIdModel, TimeStampedModel):
     is_cover = models.BooleanField(default=False)
     alt_text = models.CharField(max_length=160, blank=True)
     taken_by_team = models.BooleanField(default=False)
+    auto_enhance = models.BooleanField(
+        default=True,
+        verbose_name="retouche automatique",
+        help_text=(
+            "Retouche automatique des variantes publiques (niveaux, contraste, "
+            "balance des blancs). L'original privé n'est jamais modifié."
+        ),
+    )
 
     class Meta:
         ordering = ["order", "id"]
