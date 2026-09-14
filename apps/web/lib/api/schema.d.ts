@@ -356,7 +356,7 @@ export interface paths {
          *     DELETE /availability/host/properties/{public_id}/blocks/{id}/
          *     GET/POST /availability/host/properties/{public_id}/calendars/ (iCal)
          */
-        post: operations["availability_host_properties_calendars_create_2"];
+        post: operations["availability_host_properties_calendar_resync"];
         /**
          * @description Calendrier d'un bien pour son propriétaire :
          *     GET  /availability/host/properties/{public_id}/blocks/
@@ -364,7 +364,7 @@ export interface paths {
          *     DELETE /availability/host/properties/{public_id}/blocks/{id}/
          *     GET/POST /availability/host/properties/{public_id}/calendars/ (iCal)
          */
-        delete: operations["availability_host_properties_calendars_destroy"];
+        delete: operations["availability_host_properties_calendar_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -916,6 +916,27 @@ export interface paths {
         put?: never;
         /** @description Outil interne : biens repérés à contacter. Staff uniquement. */
         post: operations["leads_import_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads/owner-contact/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Formulaire public « Devenir hôte » (nom, téléphone, ville, type de bien).
+         *     Crée un lead `manual` et prévient l'équipe par email. Anti-abus : throttle dédié et
+         *     champ piège `website` (une valeur non vide est ignorée silencieusement).
+         */
+        post: operations["leads_owner_contact_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1489,6 +1510,13 @@ export interface components {
          * @enum {string}
          */
         BookingStatusEnum: "awaiting_deposit" | "confirmed" | "in_progress" | "completed" | "cancelled";
+        /**
+         * @description * `airbnb` - Airbnb
+         *     * `booking` - Booking.com
+         *     * `other` - Autre
+         * @enum {string}
+         */
+        CalendarSourceEnum: "airbnb" | "booking" | "other";
         CancelRequest: {
             /** @default  */
             reason: string;
@@ -1501,11 +1529,15 @@ export interface components {
          * @enum {string}
          */
         CategoryEnum: "essential" | "comfort" | "building" | "safety";
+        /** @description Textes éditoriaux : vides tant qu'ils sont marqués [À RÉDIGER] (le front masque). */
         CityDetail: {
             name: string;
             slug: string;
             readonly governorate: components["schemas"]["Governorate"];
-            readonly centroid: string;
+            readonly centroid: {
+                lat: number;
+                lng: number;
+            };
             /** @description Affichée sur l'accueil */
             is_featured?: boolean;
             /** @default 0 */
@@ -1514,10 +1546,9 @@ export interface components {
             readonly avg_monthly_price: string | null;
             /** Format: decimal */
             readonly avg_nightly_price: string | null;
-            seo_title?: string;
-            seo_description?: string;
-            /** @description Texte d'introduction affiché sur la page */
-            intro_text?: string;
+            readonly seo_title: string;
+            readonly seo_description: string;
+            readonly intro_text: string;
             readonly neighborhoods: components["schemas"]["NeighborhoodSummary"][];
         };
         CityRef: {
@@ -1528,7 +1559,10 @@ export interface components {
             name: string;
             slug: string;
             readonly governorate: components["schemas"]["Governorate"];
-            readonly centroid: string;
+            readonly centroid: {
+                lat: number;
+                lng: number;
+            };
             /** @description Affichée sur l'accueil */
             is_featured?: boolean;
             /** @default 0 */
@@ -1559,7 +1593,7 @@ export interface components {
             readonly id: number;
             /** Format: uri */
             ical_url: string;
-            source?: components["schemas"]["ExternalCalendarSourceEnum"];
+            source?: components["schemas"]["CalendarSourceEnum"];
             /** Format: date-time */
             readonly last_synced_at: string | null;
             readonly last_error: string;
@@ -1569,15 +1603,8 @@ export interface components {
         ExternalCalendarRequest: {
             /** Format: uri */
             ical_url: string;
-            source?: components["schemas"]["ExternalCalendarSourceEnum"];
+            source?: components["schemas"]["CalendarSourceEnum"];
         };
-        /**
-         * @description * `airbnb` - Airbnb
-         *     * `booking` - Booking.com
-         *     * `other` - Autre
-         * @enum {string}
-         */
-        ExternalCalendarSourceEnum: "airbnb" | "booking" | "other";
         Governorate: {
             name: string;
             slug: string;
@@ -1631,7 +1658,7 @@ export interface components {
         Lead: {
             /** Format: uuid */
             readonly public_id: string;
-            source?: components["schemas"]["Source813Enum"];
+            source?: components["schemas"]["LeadSourceEnum"];
             source_url?: string;
             title: string;
             /** Format: decimal */
@@ -1664,6 +1691,14 @@ export interface components {
             skipped: number;
         };
         /**
+         * @description * `tayara` - Tayara
+         *     * `mubawab` - Mubawab
+         *     * `facebook` - Facebook
+         *     * `manual` - Manuel
+         * @enum {string}
+         */
+        LeadSourceEnum: "tayara" | "mubawab" | "facebook" | "manual";
+        /**
          * @description * `new` - Nouveau
          *     * `contacted` - Contacté
          *     * `visit_scheduled` - Visite planifiée
@@ -1678,7 +1713,7 @@ export interface components {
             note: string;
         };
         LeadWrite: {
-            source?: components["schemas"]["Source813Enum"];
+            source?: components["schemas"]["LeadSourceEnum"];
             source_url?: string;
             title: string;
             /** Format: decimal */
@@ -1691,7 +1726,7 @@ export interface components {
             assigned_to?: string | null;
         };
         LeadWriteRequest: {
-            source?: components["schemas"]["Source813Enum"];
+            source?: components["schemas"]["LeadSourceEnum"];
             source_url?: string;
             title: string;
             /** Format: decimal */
@@ -1723,20 +1758,23 @@ export interface components {
             currency: string;
             signature: string;
         };
+        /** @description Textes éditoriaux : vides tant qu'ils sont marqués [À RÉDIGER] (le front masque). */
         NeighborhoodDetail: {
             name: string;
             slug: string;
             readonly city_slug: string;
-            readonly centroid: string;
+            readonly centroid: {
+                lat: number;
+                lng: number;
+            };
             /** @default 0 */
             readonly property_count: number;
             /** Format: decimal */
             readonly avg_monthly_price: string | null;
             readonly city: components["schemas"]["CitySummary"];
-            seo_title?: string;
-            seo_description?: string;
-            /** @description Texte d'introduction affiché sur la page */
-            intro_text?: string;
+            readonly seo_title: string;
+            readonly seo_description: string;
+            readonly intro_text: string;
         };
         NeighborhoodRef: {
             name: string;
@@ -1746,7 +1784,10 @@ export interface components {
             name: string;
             slug: string;
             readonly city_slug: string;
-            readonly centroid: string;
+            readonly centroid: {
+                lat: number;
+                lng: number;
+            };
             /** @default 0 */
             readonly property_count: number;
             /** Format: decimal */
@@ -1762,6 +1803,26 @@ export interface components {
          * @enum {string}
          */
         OutcomeEnum: "succeeded" | "failed";
+        /**
+         * @description * `studio` - Studio
+         *     * `apartment` - Appartement
+         *     * `villa` - Villa
+         *     * `room_in_shared_flat` - Chambre en colocation
+         *     * `other` - Autre
+         * @enum {string}
+         */
+        OwnerContactPropertyTypeEnum: "studio" | "apartment" | "villa" | "room_in_shared_flat" | "other";
+        /** @description Formulaire public « Devenir hôte » : crée un lead manuel pour l'équipe. */
+        OwnerContactRequest: {
+            name: string;
+            phone: string;
+            city: string;
+            property_type: components["schemas"]["OwnerContactPropertyTypeEnum"];
+            /** @default  */
+            message: string;
+            /** @default  */
+            website: string;
+        };
         PaginatedBookingList: {
             /** @example 123 */
             count: number;
@@ -1977,7 +2038,7 @@ export interface components {
             email: string;
         };
         PatchedLeadWriteRequest: {
-            source?: components["schemas"]["Source813Enum"];
+            source?: components["schemas"]["LeadSourceEnum"];
             source_url?: string;
             title?: string;
             /** Format: decimal */
@@ -1992,7 +2053,7 @@ export interface components {
         PatchedPropertyWriteRequest: {
             title?: string;
             description?: string;
-            property_type?: components["schemas"]["PropertyTypeEnum"];
+            property_type?: components["schemas"]["PropertyTypeB7fEnum"];
             /** @description S+1, S+2, ... */
             rooms_label?: string;
             bedrooms?: number;
@@ -2005,7 +2066,10 @@ export interface components {
             city?: string;
             neighborhood?: string | null;
             address_private?: string;
-            location?: string | null;
+            location?: {
+                lat: number;
+                lng: number;
+            } | null;
             location_precision?: components["schemas"]["LocationPrecisionEnum"];
             charges_included?: boolean;
             /**
@@ -2121,7 +2185,7 @@ export interface components {
             readonly public_id: string;
             readonly slug: string;
             readonly title: string;
-            readonly property_type: components["schemas"]["PropertyTypeEnum"];
+            readonly property_type: components["schemas"]["PropertyTypeB7fEnum"];
             /** @description S+1, S+2, ... */
             readonly rooms_label: string;
             readonly bedrooms: number;
@@ -2152,7 +2216,7 @@ export interface components {
             readonly public_id: string;
             readonly slug: string;
             readonly title: string;
-            readonly property_type: components["schemas"]["PropertyTypeEnum"];
+            readonly property_type: components["schemas"]["PropertyTypeB7fEnum"];
             /** @description S+1, S+2, ... */
             readonly rooms_label: string;
             readonly bedrooms: number;
@@ -2207,7 +2271,7 @@ export interface components {
             readonly slug: string;
             readonly title: string;
             readonly description: string;
-            readonly property_type: components["schemas"]["PropertyTypeEnum"];
+            readonly property_type: components["schemas"]["PropertyTypeB7fEnum"];
             /** @description S+1, S+2, ... */
             readonly rooms_label: string;
             readonly bedrooms: number;
@@ -2220,7 +2284,10 @@ export interface components {
             readonly city: components["schemas"]["CityRef"];
             readonly neighborhood: components["schemas"]["NeighborhoodRef"];
             readonly address_private: string;
-            readonly location: string;
+            readonly location: {
+                lat: number;
+                lng: number;
+            } | null;
             readonly location_precision: components["schemas"]["LocationPrecisionEnum"];
             readonly status: components["schemas"]["PropertyStatusEnum"];
             readonly rejection_reason: string;
@@ -2277,7 +2344,7 @@ export interface components {
             readonly slug: string;
             readonly title: string;
             readonly description: string;
-            readonly property_type: components["schemas"]["PropertyTypeEnum"];
+            readonly property_type: components["schemas"]["PropertyTypeB7fEnum"];
             /** @description S+1, S+2, ... */
             readonly rooms_label: string;
             readonly bedrooms: number;
@@ -2290,7 +2357,10 @@ export interface components {
             readonly city: components["schemas"]["CityRef"];
             readonly neighborhood: components["schemas"]["NeighborhoodRef"];
             readonly address_private: string;
-            readonly location: string;
+            readonly location: {
+                lat: number;
+                lng: number;
+            } | null;
             readonly location_precision: components["schemas"]["LocationPrecisionEnum"];
             readonly status: components["schemas"]["PropertyStatusEnum"];
             readonly rejection_reason: string;
@@ -2354,11 +2424,11 @@ export interface components {
          *     * `room_in_shared_flat` - Chambre en colocation
          * @enum {string}
          */
-        PropertyTypeEnum: "studio" | "apartment" | "villa" | "room_in_shared_flat";
+        PropertyTypeB7fEnum: "studio" | "apartment" | "villa" | "room_in_shared_flat";
         PropertyWrite: {
             title: string;
             description?: string;
-            property_type: components["schemas"]["PropertyTypeEnum"];
+            property_type: components["schemas"]["PropertyTypeB7fEnum"];
             /** @description S+1, S+2, ... */
             rooms_label?: string;
             bedrooms?: number;
@@ -2371,7 +2441,10 @@ export interface components {
             city: string;
             neighborhood?: string | null;
             address_private?: string;
-            location?: string | null;
+            location?: {
+                lat: number;
+                lng: number;
+            } | null;
             location_precision?: components["schemas"]["LocationPrecisionEnum"];
             charges_included?: boolean;
             /**
@@ -2391,7 +2464,7 @@ export interface components {
         PropertyWriteRequest: {
             title: string;
             description?: string;
-            property_type: components["schemas"]["PropertyTypeEnum"];
+            property_type: components["schemas"]["PropertyTypeB7fEnum"];
             /** @description S+1, S+2, ... */
             rooms_label?: string;
             bedrooms?: number;
@@ -2404,7 +2477,10 @@ export interface components {
             city: string;
             neighborhood?: string | null;
             address_private?: string;
-            location?: string | null;
+            location?: {
+                lat: number;
+                lng: number;
+            } | null;
             location_precision?: components["schemas"]["LocationPrecisionEnum"];
             charges_included?: boolean;
             /**
@@ -2496,14 +2572,6 @@ export interface components {
             url: string;
             expires_in: number;
         };
-        /**
-         * @description * `tayara` - Tayara
-         *     * `mubawab` - Mubawab
-         *     * `facebook` - Facebook
-         *     * `manual` - Manuel
-         * @enum {string}
-         */
-        Source813Enum: "tayara" | "mubawab" | "facebook" | "manual";
         UnavailableRange: {
             /** Format: date */
             start: string;
@@ -3049,7 +3117,7 @@ export interface operations {
             };
         };
     };
-    availability_host_properties_calendars_create_2: {
+    availability_host_properties_calendar_resync: {
         parameters: {
             query?: never;
             header?: never;
@@ -3062,7 +3130,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description No response body */
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3070,7 +3138,7 @@ export interface operations {
             };
         };
     };
-    availability_host_properties_calendars_destroy: {
+    availability_host_properties_calendar_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -3216,6 +3284,15 @@ export interface operations {
                 page?: number;
                 /** @description Nombre de résultats à retourner par page. */
                 page_size?: number;
+                property__public_id?: string;
+                /**
+                 * @description * `awaiting_deposit` - Acompte en attente
+                 *     * `confirmed` - Confirmée
+                 *     * `in_progress` - En cours
+                 *     * `completed` - Terminée
+                 *     * `cancelled` - Annulée
+                 */
+                status?: "awaiting_deposit" | "cancelled" | "completed" | "confirmed" | "in_progress";
             };
             header?: never;
             path?: never;
@@ -3311,6 +3388,15 @@ export interface operations {
                 page?: number;
                 /** @description Nombre de résultats à retourner par page. */
                 page_size?: number;
+                property__public_id?: string;
+                /**
+                 * @description * `pending` - En attente
+                 *     * `accepted` - Acceptée
+                 *     * `declined` - Refusée
+                 *     * `expired` - Expirée
+                 *     * `cancelled` - Annulée
+                 */
+                status?: "accepted" | "cancelled" | "declined" | "expired" | "pending";
             };
             header?: never;
             path?: never;
@@ -3987,6 +4073,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeadImportResult"];
+                };
+            };
+        };
+    };
+    leads_owner_contact_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnerContactRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["OwnerContactRequest"];
+                "multipart/form-data": components["schemas"]["OwnerContactRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        detail?: string;
+                    };
                 };
             };
         };

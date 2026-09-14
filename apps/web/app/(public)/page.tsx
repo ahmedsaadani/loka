@@ -150,7 +150,7 @@ export default async function HomePage() {
             <p className="mt-1 max-w-xl text-background/80">{t.home.hostCtaText}</p>
           </div>
           <Button size="lg" variant="secondary" asChild>
-            <Link href="/hote/inscription">{t.home.hostCta}</Link>
+            <Link href="/devenir-hote">{t.home.hostCta}</Link>
           </Button>
         </div>
       </section>

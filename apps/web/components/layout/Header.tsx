@@ -23,7 +23,7 @@ import { t } from "@/lib/i18n";
 const PUBLIC_LINKS = [
   { href: "/recherche", label: t.nav.search },
   { href: "/#villes", label: t.nav.cities },
-  { href: "/#comment-ca-marche", label: t.nav.howItWorks },
+  { href: "/comment-ca-marche", label: t.nav.howItWorks },
 ];
 
 function spaceLinks(role: string): Array<{ href: string; label: string }> {
@@ -67,7 +67,7 @@ export function Header() {
           {status === "anonymous" && (
             <>
               <Button variant="ghost" asChild>
-                <Link href="/hote/inscription">{t.nav.host}</Link>
+                <Link href="/devenir-hote">{t.nav.host}</Link>
               </Button>
               <Button variant="outline" asChild>
                 <Link href="/connexion">{t.nav.login}</Link>
@@ -158,7 +158,7 @@ export function Header() {
                     <Link href="/connexion">{t.nav.login}</Link>
                   </Button>
                   <Button variant="outline" asChild onClick={() => setOpen(false)}>
-                    <Link href="/hote/inscription">{t.nav.host}</Link>
+                    <Link href="/devenir-hote">{t.nav.host}</Link>
                   </Button>
                 </>
               )}

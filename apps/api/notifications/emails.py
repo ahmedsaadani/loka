@@ -14,6 +14,7 @@ from django.utils.html import strip_tags
 if TYPE_CHECKING:
     from accounts.models import User
     from bookings.models import Booking, BookingRequest
+    from leads.models import Lead
     from listings.models import Property
 
 
@@ -137,3 +138,26 @@ def send_password_reset(user: User, reset_url: str) -> None:
         template="password_reset",
         context={"user": user, "reset_url": reset_url},
     )
+
+
+def staff_recipients() -> list[str]:
+    """Adresses de l'équipe (staff et admin actifs)."""
+    from accounts.models import Role, User
+
+    return list(
+        User.objects.filter(is_active=True, role__in=[Role.STAFF, Role.ADMIN])
+        .exclude(email="")
+        .order_by("email")
+        .values_list("email", flat=True)
+    )
+
+
+def send_owner_contact_to_staff(lead: Lead) -> None:
+    """Nouveau propriétaire via le formulaire « Devenir hôte » : un email par membre de l'équipe."""
+    for email in staff_recipients():
+        _enqueue(
+            to=email,
+            subject=f"Nouveau propriétaire à rappeler : {lead.title}",
+            template="owner_contact_received",
+            context={"lead": lead, "data": lead.raw_data},
+        )

@@ -20,6 +20,124 @@ export const fr = {
     menu: "Menu",
     home: "Accueil",
   },
+  howItWorks: {
+    metaTitle: "Comment ça marche",
+    metaDescription:
+      "Comment Loka vérifie chaque logement, comment réserver à la nuit, au mois ou à l'année, et comment proposer votre bien.",
+    title: "Comment ça marche",
+    intro:
+      "Loka publie uniquement des logements que notre équipe a visités, photographiés et évalués. Voici le parcours, côté voyageur et côté propriétaire.",
+    travelerTitle: "Vous cherchez un logement",
+    travelerSteps: [
+      {
+        title: "Vous cherchez",
+        text: "Filtrez par ville, quartier, durée (nuit, mois, année) et budget. Chaque annonce est réelle et à jour.",
+      },
+      {
+        title: "Vous demandez",
+        text: "Envoyez une demande avec un devis instantané. L'hôte répond sous 48 h ; sans réponse, la demande expire.",
+      },
+      {
+        title: "Vous réservez",
+        text: "Payez un acompte sécurisé (30 % à la nuit, un mois au mois, un douzième à l'année). Le solde se règle directement avec l'hôte.",
+      },
+      {
+        title: "Vous emménagez",
+        text: "L'adresse exacte et les coordonnées de l'hôte vous sont communiquées à la confirmation. Un contrat est généré pour les locations au mois et à l'année.",
+      },
+    ],
+    verificationTitle: "Ce que « vérifié par Loka » veut dire",
+    verificationPoints: [
+      "Un membre de l'équipe a visité le logement en personne.",
+      "Les photos sont prises par nous, sans retouche trompeuse.",
+      "L'état du bien est évalué sur place : simple, bon état ou excellent.",
+      "L'identité du propriétaire est contrôlée avant publication.",
+      "Les prix affichés sont ceux qui vous seront facturés, charges précisées.",
+      "Toute modification importante d'une annonce repasse par notre validation.",
+    ],
+    hostTitle: "Vous avez un bien à louer",
+    hostSteps: [
+      {
+        title: "On visite et on photographie",
+        text: "Vous nous laissez vos coordonnées, on fixe une visite. Nos photos et notre description mettent votre bien en valeur.",
+      },
+      {
+        title: "On publie et on filtre",
+        text: "Votre annonce est publiée avec le badge « vérifié ». Vous recevez des demandes de voyageurs identifiés, avec un devis clair.",
+      },
+      {
+        title: "Vous encaissez",
+        text: "Vous acceptez ou refusez chaque demande. L'acompte sécurise la réservation, vous gardez le contrôle du calendrier et des prix.",
+      },
+    ],
+    hostCta: "Proposer mon bien",
+    searchCta: "Voir les logements",
+    faqTitle: "Questions fréquentes",
+    faq: [
+      {
+        q: "Puis-je annuler une demande ou une réservation ?",
+        a: "Oui. Une demande en attente s'annule librement. Une réservation confirmée est remboursable jusqu'à 7 jours avant l'arrivée à la nuit, 30 jours au mois et à l'année.",
+      },
+      {
+        q: "Comment sont fixés les prix ?",
+        a: "Par le propriétaire, en dinars. Le devis affiche le montant total, l'acompte et les frais de service avant toute demande.",
+      },
+      {
+        q: "Que se passe-t-il si le logement ne correspond pas aux photos ?",
+        a: "C'est précisément ce que la vérification évite. Si un écart réel était constaté à l'arrivée, contactez-nous le jour même : nous intervenons auprès de l'hôte.",
+      },
+      {
+        q: "Combien coûte Loka à un propriétaire ?",
+        a: "La visite, les photos et la publication sont gratuites. Une commission est prélevée uniquement sur les réservations confirmées : 10 % à la nuit, 5 % au mois, 3 % à l'année.",
+      },
+    ],
+  },
+  becomeHost: {
+    metaTitle: "Devenir hôte : proposez votre bien",
+    metaDescription:
+      "Louez votre appartement, studio ou villa avec Loka : visite, photos et publication gratuites, voyageurs identifiés, acompte sécurisé. Laissez vos coordonnées, on vous rappelle.",
+    kicker: "Propriétaires",
+    title: "Louez votre bien en toute confiance, on s'occupe du reste.",
+    intro:
+      "Un appartement à Tunis, un studio près d'ESPRIT, une villa à Hammamet ? Laissez-nous vos coordonnées : un membre de l'équipe vous rappelle sous 48 h pour organiser la visite.",
+    benefits: [
+      {
+        title: "Visite et photos offertes",
+        text: "Notre équipe se déplace, photographie et rédige l'annonce. Vous n'avez rien à préparer.",
+      },
+      {
+        title: "Des voyageurs identifiés",
+        text: "Chaque demande vient d'un compte vérifié, avec un devis clair. Vous acceptez ou refusez en un clic.",
+      },
+      {
+        title: "Un acompte qui sécurise",
+        text: "La réservation n'est confirmée qu'une fois l'acompte payé. Le solde se règle directement entre vous et le voyageur.",
+      },
+      {
+        title: "Vous gardez la main",
+        text: "Prix, calendrier, durée minimale, règles : tout se modifie depuis votre espace, à tout moment.",
+      },
+    ],
+    feesTitle: "Sans frais fixes",
+    feesText:
+      "Aucun abonnement. Une commission uniquement sur les réservations confirmées : 10 % à la nuit, 5 % au mois, 3 % à l'année.",
+    alreadyAccount: "Vous préférez publier vous-même ?",
+    createAccount: "Créer un compte propriétaire",
+    formTitle: "On vous rappelle",
+    formText: "Quelques informations suffisent, le reste se fait par téléphone.",
+    name: "Votre nom",
+    phone: "Téléphone",
+    city: "Ville du bien",
+    propertyType: "Type de bien",
+    message: "Message (facultatif)",
+    messagePlaceholder: "Quartier, surface, disponibilité, questions…",
+    submit: "Être rappelé",
+    privacy:
+      "Vos coordonnées servent uniquement à vous recontacter au sujet de votre bien. Aucune démarche ne vous engage.",
+    successTitle: "Merci, c'est noté !",
+    successText:
+      "Un membre de l'équipe Loka vous appelle sous 48 h ouvrées pour convenir d'une visite.",
+  },
   home: {
     heroTitle: "Louez un logement vérifié, à la nuit, au mois ou à l'année.",
     heroSubtitle:

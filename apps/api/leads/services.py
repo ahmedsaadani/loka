@@ -96,3 +96,34 @@ def convert_to_property(lead: Lead, *, host: User, city: Any, by: User) -> Prope
     lead.save(update_fields=["converted_property", "updated_at"])
     transition(lead, LeadStatus.CONVERTED, actor=by)
     return prop
+
+
+PROPERTY_TYPE_LABELS = {
+    "studio": "Studio",
+    "apartment": "Appartement",
+    "villa": "Villa",
+    "room_in_shared_flat": "Chambre en colocation",
+    "other": "Bien",
+}
+
+
+def create_owner_contact(data: dict[str, Any]) -> Lead:
+    """Lead source « manual » depuis le formulaire propriétaire ; notifie le staff."""
+    from notifications.emails import send_owner_contact_to_staff
+
+    label = PROPERTY_TYPE_LABELS.get(data["property_type"], "Bien")
+    lead = Lead.objects.create(
+        source=LeadSource.MANUAL,
+        title=f"{label} à {data['city']} — {data['name']}"[:200],
+        city=data["city"],
+        phone=data["phone"],
+        raw_data={
+            "channel": "owner_contact_form",
+            "name": data["name"],
+            "property_type": data["property_type"],
+            "message": data.get("message", ""),
+        },
+        notes=data.get("message", ""),
+    )
+    send_owner_contact_to_staff(lead)
+    return lead

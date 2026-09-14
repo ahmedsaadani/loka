@@ -1,0 +1,14 @@
+{% extends "emails/base.html" %}
+{% block title %}Nouveau propriétaire à rappeler{% endblock %}
+{% block content %}
+<p>Un propriétaire vient de laisser ses coordonnées via la page « Devenir hôte ».</p>
+<table role="presentation" cellspacing="0" cellpadding="6" style="font-size:15px;">
+<tr><td style="color:#7a7c82;">Nom</td><td><strong>{{ data.name }}</strong></td></tr>
+<tr><td style="color:#7a7c82;">Téléphone</td><td><a href="tel:{{ lead.phone }}" style="color:#b5502e;">{{ lead.phone }}</a></td></tr>
+<tr><td style="color:#7a7c82;">Ville</td><td>{{ lead.city }}</td></tr>
+<tr><td style="color:#7a7c82;">Type de bien</td><td>{{ data.property_type }}</td></tr>
+{% if data.message %}<tr><td style="color:#7a7c82;vertical-align:top;">Message</td><td>{{ data.message|linebreaksbr }}</td></tr>{% endif %}
+</table>
+<p>Objectif : rappel sous 48 h. Le lead est dans le back-office, statut « nouveau ».</p>
+<p><a href="{{ site_url }}/admin/leads" style="display:inline-block;background:#b5502e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Ouvrir les leads</a></p>
+{% endblock %}

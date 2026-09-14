@@ -25,6 +25,8 @@ async function allProperties(): Promise<PropertyCard[]> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), changeFrequency: "daily", priority: 1 },
+    { url: absoluteUrl("/comment-ca-marche"), changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteUrl("/devenir-hote"), changeFrequency: "monthly", priority: 0.7 },
     { url: absoluteUrl("/cgu"), changeFrequency: "yearly", priority: 0.2 },
     { url: absoluteUrl("/confidentialite"), changeFrequency: "yearly", priority: 0.2 },
     { url: absoluteUrl("/contact"), changeFrequency: "yearly", priority: 0.3 },

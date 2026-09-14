@@ -87,3 +87,27 @@ class LeadImportSerializer(serializers.Serializer[Any]):
 class LeadImportResultSerializer(serializers.Serializer[Any]):
     created = serializers.IntegerField()
     skipped = serializers.IntegerField()
+
+
+class OwnerContactSerializer(serializers.Serializer[dict[str, Any]]):
+    """Formulaire public « Devenir hôte » : crée un lead manuel pour l'équipe."""
+
+    PROPERTY_TYPES = (
+        ("studio", "Studio"),
+        ("apartment", "Appartement"),
+        ("villa", "Villa"),
+        ("room_in_shared_flat", "Chambre en colocation"),
+        ("other", "Autre"),
+    )
+
+    name = serializers.CharField(max_length=120)
+    phone = serializers.RegexField(
+        r"^\+?[0-9][0-9 .-]{6,19}$",
+        max_length=32,
+        error_messages={"invalid": "Numéro de téléphone invalide."},
+    )
+    city = serializers.CharField(max_length=80)
+    property_type = serializers.ChoiceField(choices=PROPERTY_TYPES)
+    message = serializers.CharField(max_length=1500, required=False, allow_blank=True, default="")
+    # Champ piège invisible côté front : rempli uniquement par les robots.
+    website = serializers.CharField(required=False, allow_blank=True, default="")

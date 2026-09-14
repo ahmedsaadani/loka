@@ -8,10 +8,11 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
 
 from core.auth import current_user
 from core.permissions import IsStaff
@@ -24,6 +25,7 @@ from leads.serializers import (
     LeadSerializer,
     LeadStatusSerializer,
     LeadWriteSerializer,
+    OwnerContactSerializer,
 )
 from listings.serializers import PropertyStaffSerializer
 
@@ -121,3 +123,31 @@ class LeadViewSet(
         return Response({"created": created, "skipped": skipped})
 
     import_file.throttle_scope = "lead_import"  # type: ignore[attr-defined]
+
+
+class OwnerContactView(APIView):
+    """
+    Formulaire public « Devenir hôte » (nom, téléphone, ville, type de bien).
+    Crée un lead `manual` et prévient l'équipe par email. Anti-abus : throttle dédié et
+    champ piège `website` (une valeur non vide est ignorée silencieusement).
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes: list[type] = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "owner_contact"
+
+    @extend_schema(
+        request=OwnerContactSerializer,
+        responses={201: {"type": "object", "properties": {"detail": {"type": "string"}}}},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = OwnerContactSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        if not data.get("website"):
+            services.create_owner_contact(data)
+        return Response(
+            {"detail": "Merci, notre équipe vous rappelle sous 48 h."},
+            status=status.HTTP_201_CREATED,
+        )

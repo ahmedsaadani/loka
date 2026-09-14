@@ -7,13 +7,15 @@ const EXPLORE = [
   { href: "/location/ariana", label: "Location à Ariana" },
   { href: "/location/tunis", label: "Location à Tunis" },
   { href: "/location/sousse", label: "Location à Sousse" },
+  { href: "/location/hammamet", label: "Location à Hammamet" },
   { href: "/recherche?rental_mode=monthly", label: "Location au mois" },
   { href: "/recherche?rental_mode=nightly", label: "Location à la nuit" },
 ];
 
 const HOSTS = [
-  { href: "/hote/inscription", label: "Proposer un bien" },
-  { href: "/#comment-ca-marche", label: "Comment fonctionne la vérification" },
+  { href: "/devenir-hote", label: "Proposer un bien" },
+  { href: "/comment-ca-marche", label: "Comment ça marche" },
+  { href: "/hote/inscription", label: "Créer un compte propriétaire" },
 ];
 
 const LEGAL = [

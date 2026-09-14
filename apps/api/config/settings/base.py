@@ -224,6 +224,7 @@ REST_FRAMEWORK = {
         "register": "5/hour",
         "booking_request": "10/hour",
         "lead_import": "5/hour",
+        "owner_contact": "5/hour",
         "upload": "60/hour",
     },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
@@ -241,6 +242,8 @@ SPECTACULAR_SETTINGS = {
         "BookingRequestStatusEnum": "bookings.models.BookingRequestStatus.choices",
         "BookingStatusEnum": "bookings.models.BookingStatus.choices",
         "LeadStatusEnum": "leads.models.LeadStatus.choices",
+        "LeadSourceEnum": "leads.models.LeadSource.choices",
+        "CalendarSourceEnum": "availability.models.CalendarSource.choices",
         "IdentityDocumentStatusEnum": "accounts.models.IdentityDocumentStatus.choices",
     },
 }
