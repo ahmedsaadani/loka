@@ -99,7 +99,7 @@ LEADS = [
 class PhotoBank:
     """Banque locale de photos par catégorie, distribuée de façon déterministe."""
 
-    def __init__(self, rng: random.Random) -> None:
+    def __init__(self, rng: random.Random, *, require_files: bool = True) -> None:
         if not MANIFEST.exists():
             raise CommandError(
                 f"Banque de photos absente ({MANIFEST}). Lancez `python scripts/fetch_seed_photos.py` "
@@ -112,6 +112,8 @@ class PhotoBank:
         for files in self.by_category.values():
             rng.shuffle(files)
         self.cursor: dict[str, int] = dict.fromkeys(self.by_category, 0)
+        if not require_files:
+            return  # mode statique : seules les métadonnées du manifeste sont nécessaires
         missing = [
             e["file"]
             for files in self.by_category.values()
@@ -152,8 +154,16 @@ class Command(BaseCommand):
             default=None,
             help="Nombre maximal de biens du catalogue à créer (défaut : tous)",
         )
+        parser.add_argument("--no-photos", action="store_true", help="Alias de --photo-mode none")
         parser.add_argument(
-            "--no-photos", action="store_true", help="Ne charge pas les photos (plus rapide)"
+            "--photo-mode",
+            choices=["pipeline", "static", "none"],
+            default="pipeline",
+            help=(
+                "pipeline : traitement réel (MinIO + variantes Celery). "
+                "static : variantes pré-générées servies par le front (aucun traitement). "
+                "none : aucune photo."
+            ),
         )
         parser.add_argument(
             "--reset", action="store_true", help="Supprime d'abord les biens de démo existants"
@@ -176,15 +186,15 @@ class Command(BaseCommand):
         host = users["host@loka.tn"]
         if options["reset"]:
             self._reset_properties(host)
-        with_photos = not options["no_photos"]
-        bank = PhotoBank(rng) if with_photos else None
+        mode = "none" if options["no_photos"] else options["photo_mode"]
+        bank = PhotoBank(rng, require_files=(mode == "pipeline")) if mode != "none" else None
         limit = options["properties"]
         catalog = PROPERTIES[:limit] if limit else PROPERTIES
         created = 0
         for index, spec in enumerate(catalog):
-            if self._create_property(index, spec, rng, host, amenities, bank):
+            if self._create_property(index, spec, rng, host, amenities, bank, mode):
                 created += 1
-        if with_photos and options["wait_variants"]:
+        if mode == "pipeline" and options["wait_variants"]:
             self._wait_for_variants(host, options["wait_variants"])
         call_command("rebuild_snapshots", "--force")
         self._revalidate_front()
@@ -343,6 +353,7 @@ class Command(BaseCommand):
         host: User,
         amenities: dict[str, Amenity],
         bank: PhotoBank | None,
+        photo_mode: str = "pipeline",
     ) -> bool:
         tag = f"{SEED_TAG} {spec['key']}"
         if Property.objects.filter(host=host, verification_notes=tag).exists():
@@ -410,12 +421,12 @@ class Command(BaseCommand):
                     property=prop, rental_mode=RentalMode.YEARLY, price=Decimal(spec["yearly"])
                 )
             if bank is not None:
-                self._attach_photos(prop, spec, bank, index)
+                self._attach_photos(prop, spec, bank, index, photo_mode)
         self.stdout.write(f"  + {prop.title}")
         return True
 
     def _attach_photos(
-        self, prop: Property, spec: SeedProperty, bank: PhotoBank, index: int
+        self, prop: Property, spec: SeedProperty, bank: PhotoBank, index: int, mode: str
     ) -> None:
         used: set[str] = set()
         for position, category in enumerate(PHOTO_PLANS[spec["plan"]]):
@@ -423,10 +434,38 @@ class Command(BaseCommand):
             used.add(entry["file"])
             alts = PHOTO_ALT[category]
             alt = alts[(index + position) % len(alts)]
-            data = (PHOTOS_DIR / entry["file"]).read_bytes()
-            upload = SimpleUploadedFile(entry["file"], data, content_type="image/jpeg")
-            # Pipeline réel : validation + ré-encodage, original privé, variantes WebP via Celery.
-            services.add_photo(prop, upload=upload, alt_text=alt, taken_by_team=True)
+            if mode == "static":
+                self._attach_static_photo(prop, entry, alt, position)
+            else:
+                data = (PHOTOS_DIR / entry["file"]).read_bytes()
+                upload = SimpleUploadedFile(entry["file"], data, content_type="image/jpeg")
+                # Pipeline réel : validation + ré-encodage, original privé, variantes Celery.
+                services.add_photo(prop, upload=upload, alt_text=alt, taken_by_team=True)
+
+    def _attach_static_photo(
+        self, prop: Property, entry: dict[str, Any], alt: str, order: int
+    ) -> None:
+        """Photo pointant vers des variantes WebP pré-générées servies par le front.
+
+        Aucun traitement d'image ni dépendance à MinIO : fiable sur un petit hébergeur.
+        """
+        stem = entry["file"].rsplit(".", 1)[0]
+        # URLs relatives : servies par le front (public/demo-photos), acceptées par next/image
+        # sans configuration de domaine ni traitement supplémentaire.
+        variants = {name: f"/demo-photos/{stem}_{name}.webp" for name in settings.PHOTO_VARIANTS}
+        photo = PropertyPhoto(
+            property=prop,
+            order=order + 1,
+            is_cover=order == 0,
+            alt_text=alt,
+            taken_by_team=True,
+            width=entry.get("width", 1600),
+            height=entry.get("height", 1067),
+            variants=variants,
+        )
+        # Référence d'original factice (jamais servie pour une démo) pour satisfaire le champ.
+        photo.original.name = f"demo/{entry['file']}"
+        photo.save()
 
     def _wait_for_variants(self, host: User, timeout: int) -> None:
         if settings.CELERY_TASK_ALWAYS_EAGER:

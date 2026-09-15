@@ -10,18 +10,12 @@ psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS postgis'
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 
-# Données de démonstration AVEC photos. Le traitement d'images tourne en arrière-plan pour ne
-# pas retarder le démarrage de gunicorn ; il ne s'exécute qu'une fois (base vide, ou biens
-# présents mais sans photos → seed --reset). Sur le plan gratuit le stockage est éphémère :
-# après une longue mise en veille, relancer un seed régénère les photos.
-HAS_PROP=$(python -c 'import django; django.setup(); from listings.models import Property; print(1 if Property.objects.exists() else 0)' 2>/dev/null)
-HAS_PHOTO=$(python -c 'import django; django.setup(); from listings.models import PropertyPhoto; print(1 if PropertyPhoto.objects.exists() else 0)' 2>/dev/null)
-if [ "$HAS_PROP" = "0" ]; then
-  echo "Base vide : chargement des données de démonstration avec photos."
-  (python manage.py seed || echo "seed échoué") &
-elif [ "$HAS_PHOTO" = "0" ]; then
-  echo "Biens sans photos : rechargement avec photos (seed --reset)."
-  (python manage.py seed --reset || echo "seed --reset échoué") &
+# Données de démo au premier démarrage (base vide) : SANS traitement d'images au runtime
+# (trop lourd sur le plan gratuit → risque de plantage). Les photos sont servies en statique
+# par le front (mode --photo-mode static), donc pas de dépendance à MinIO ni de génération.
+if [ "$(python -c 'import django; django.setup(); from listings.models import Property; print(1 if Property.objects.exists() else 0)' 2>/dev/null)" = "0" ]; then
+  echo "Base vide : chargement des données de démonstration (photos statiques)."
+  python manage.py seed --photo-mode static || echo "seed échoué, on continue."
 fi
 
 exec gunicorn config.wsgi:application --bind "0.0.0.0:${PORT:-10000}" --workers 1 --timeout 120
