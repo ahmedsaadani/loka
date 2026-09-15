@@ -7,6 +7,7 @@ import {
   MapPin,
   Ruler,
   Sofa,
+  Star,
   Users,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -130,11 +131,22 @@ export default async function PropertyPage({ params }: { params: Promise<Params>
               <ConditionBadge grade={property.condition_grade} />
             </div>
             <h1 className="mt-3 text-2xl md:text-4xl">{property.title}</h1>
-            <p className="mt-2 flex items-center gap-1 text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              {typeLabel} · {property.neighborhood ? `${property.neighborhood.name}, ` : ""}
-              {property.city.name}
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
+              {property.rating && (
+                <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  {Number(property.rating).toFixed(1)}
+                  <span className="font-normal text-muted-foreground">
+                    · {property.review_count} avis
+                  </span>
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                {typeLabel} · {property.neighborhood ? `${property.neighborhood.name}, ` : ""}
+                {property.city.name}
+              </span>
+            </div>
             <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
               <li className="inline-flex items-center gap-1.5">
                 <Users className="h-4 w-4 text-muted-foreground" /> {property.max_guests}{" "}

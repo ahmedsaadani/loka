@@ -203,6 +203,7 @@ export function SearchResults({ initial, cities, amenities, initialParams }: Pro
               <SelectItem value="newest">{t.search.sortNewest}</SelectItem>
               <SelectItem value="price">{t.search.sortPriceAsc}</SelectItem>
               <SelectItem value="-price">{t.search.sortPriceDesc}</SelectItem>
+              <SelectItem value="-rating">Mieux notés</SelectItem>
             </SelectContent>
           </Select>
           <Sheet>

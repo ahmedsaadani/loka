@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Menu, User as UserIcon } from "lucide-react";
+import { Heart, LogOut, Menu, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -64,6 +64,11 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <Button variant="ghost" size="icon" asChild aria-label="Mes favoris">
+            <Link href="/favoris">
+              <Heart className="h-5 w-5" />
+            </Link>
+          </Button>
           <CurrencySwitcher />
           {status === "loading" && <Skeleton className="h-10 w-28" />}
           {status === "anonymous" && (

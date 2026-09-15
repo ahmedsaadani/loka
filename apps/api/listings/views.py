@@ -76,7 +76,11 @@ class PublicPropertyViewSet(
         qs = Property.objects.for_public()
         ordering = self.request.query_params.get("ordering", "newest")
         mode = self.request.query_params.get("rental_mode") or RentalMode.MONTHLY
-        if ordering in {"price", "-price"}:
+        if ordering in {"rating", "-rating"}:
+            qs = qs.order_by(
+                ("-" if ordering.startswith("-") else "") + "rating", "-published_at"
+            )
+        elif ordering in {"price", "-price"}:
             price_sq = PricingPlan.objects.filter(
                 property=OuterRef("pk"), rental_mode=mode, is_active=True
             ).values("price")[:1]
