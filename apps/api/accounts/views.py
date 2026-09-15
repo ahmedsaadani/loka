@@ -44,7 +44,9 @@ from core.models import SensitiveAccessLog
 from core.permissions import IsStaff, is_staff_user
 from core.storages import signed_private_url
 
-SAMESITE: Literal["Lax"] = "Lax"
+# SameSite du cookie de session. "None" (+ Secure) requis quand le front et l'API sont
+# sur des domaines différents (déploiement à deux sous-domaines).
+SAMESITE = cast('Literal["Lax", "Strict", "None"]', settings.JWT_COOKIE_SAMESITE)
 
 
 def _set_refresh_cookie(response: Response, refresh: RefreshToken) -> None:

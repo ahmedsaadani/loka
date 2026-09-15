@@ -73,6 +73,10 @@ services:
         value: localhost,127.0.0.1
       - key: CELERY_TASK_ALWAYS_EAGER
         value: "1"
+      # Front et API sur deux sous-domaines : le cookie de session doit être SameSite=None
+      # (+ Secure, déjà activé en prod) pour être accepté d'un domaine à l'autre.
+      - key: JWT_COOKIE_SAMESITE
+        value: "None"
       # Limites anti-spam assouplies pour ce déploiement de test (inscription, formulaire hôte).
       - key: THROTTLE_REGISTER
         value: 100/hour
