@@ -20,6 +20,8 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   robots: { index: true, follow: true },
   openGraph: { siteName: SITE_NAME, locale: "fr_TN", type: "website" },
+  icons: { icon: "/icon-192.png", apple: "/apple-icon.png" },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

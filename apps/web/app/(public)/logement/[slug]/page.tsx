@@ -21,6 +21,7 @@ import { ConditionBadge } from "@/components/listing/ConditionBadge";
 import { Gallery } from "@/components/listing/Gallery";
 import { MobileBookingBar } from "@/components/listing/MobileBookingBar";
 import { PropertyMapLazy } from "@/components/listing/PropertyMapLazy";
+import { ShareButton } from "@/components/listing/ShareButton";
 import { PricingTabs } from "@/components/listing/PricingTabs";
 import { PropertyCard } from "@/components/listing/PropertyCard";
 import { VerifiedBadge } from "@/components/listing/VerifiedBadge";
@@ -122,13 +123,16 @@ export default async function PropertyPage({ params }: { params: Promise<Params>
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_380px]">
         <div className="min-w-0 space-y-8">
           <header>
-            <div className="flex flex-wrap items-center gap-2">
-              <VerifiedBadge
-                level={property.verification_level}
-                verifiedAt={property.verified_at}
-                showDate
-              />
-              <ConditionBadge grade={property.condition_grade} />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <VerifiedBadge
+                  level={property.verification_level}
+                  verifiedAt={property.verified_at}
+                  showDate
+                />
+                <ConditionBadge grade={property.condition_grade} />
+              </div>
+              <ShareButton title={property.title} />
             </div>
             <h1 className="mt-3 text-2xl md:text-4xl">{property.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
