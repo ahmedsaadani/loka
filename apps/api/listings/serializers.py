@@ -189,6 +189,8 @@ class PropertyCardSerializer(SnapshotAwareMixin, serializers.ModelSerializer[Pro
             "condition_grade",
             "verified_at",
             "distance_notes",
+            "rating",
+            "review_count",
         )
         read_only_fields = fields
 

@@ -39,5 +39,3 @@ apps/web/next-env.d.ts
 # Rapports Lighthouse locaux
 .lighthouse/
 
-# Banque de photos de démo (téléchargée par scripts/fetch_seed_photos.py)
-apps/api/seed/photos/*.jpg

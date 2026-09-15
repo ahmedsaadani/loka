@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
 
 import { AuthProvider } from "@/lib/api/auth-context";
+import { CurrencyProvider } from "@/lib/currency";
+import { FavoritesProvider } from "@/lib/favorites";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 import "@/styles/globals.css";
@@ -31,8 +33,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" dir="ltr">
       <body className="min-h-dvh">
         <AuthProvider>
-          {children}
-          <Toaster position="top-center" richColors closeButton />
+          <CurrencyProvider>
+            <FavoritesProvider>
+              {children}
+              <Toaster position="top-center" richColors closeButton />
+            </FavoritesProvider>
+          </CurrencyProvider>
         </AuthProvider>
       </body>
     </html>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { CurrencySwitcher } from "@/components/layout/CurrencySwitcher";
 import { Logo } from "@/components/layout/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +64,7 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <CurrencySwitcher />
           {status === "loading" && <Skeleton className="h-10 w-28" />}
           {status === "anonymous" && (
             <>

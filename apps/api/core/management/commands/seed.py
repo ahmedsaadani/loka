@@ -136,6 +136,12 @@ class PhotoBank:
         return files[self.cursor[category] % len(files)]
 
 
+def _seed_rating(rng: random.Random, grade: str) -> Decimal:
+    """Note moyenne réaliste, un peu plus haute pour les biens en meilleur état."""
+    base = {"basic": 4.0, "good": 4.4, "excellent": 4.7}.get(grade, 4.4)
+    return Decimal(str(round(min(5.0, base + rng.uniform(-0.3, 0.3)), 1)))
+
+
 class Command(BaseCommand):
     help = "Charge les données de démonstration Loka."
 
@@ -379,6 +385,8 @@ class Command(BaseCommand):
                 distance_notes=spec["distances"],
                 house_rules=spec["rules"],
                 published_at=timezone.now() - timedelta(days=rng.randrange(1, 60), hours=index),
+                rating=_seed_rating(rng, spec["grade"]),
+                review_count=rng.randrange(4, 90),
             )
             prop.amenities.set([amenities[code] for code in spec["amenities"]])
             if spec["monthly"] is not None:

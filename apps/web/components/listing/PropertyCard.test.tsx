@@ -55,6 +55,8 @@ const base: PropertyCardData = {
   condition_grade: "excellent",
   verified_at: "2026-08-01T10:00:00Z",
   distance_notes: { ESPRIT: "8 min à pied" },
+  rating: "4.8",
+  review_count: 23,
 };
 
 describe("PropertyCard", () => {

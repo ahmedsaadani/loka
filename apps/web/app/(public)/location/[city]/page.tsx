@@ -159,7 +159,7 @@ export default async function CityPage({ params }: { params: Promise<Params> }) 
             voisines.
           </p>
         ) : (
-          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {listings.map((p, i) => (
               <PropertyCard key={p.public_id} property={p} priority={i === 0} />
             ))}

@@ -199,6 +199,10 @@ class Property(PublicIdModel, TimeStampedModel):
     meta_description = models.CharField(max_length=320, blank=True)
 
     published_at = models.DateTimeField(null=True, blank=True)
+    rating = models.DecimalField(
+        max_digits=2, decimal_places=1, null=True, blank=True, help_text="Note moyenne /5"
+    )
+    review_count = models.PositiveIntegerField(default=0)
     # ADR 0007 : version publique figée à la publication, servie pendant une revue de modifications.
     published_snapshot = models.JSONField(null=True, blank=True, editable=False)
 

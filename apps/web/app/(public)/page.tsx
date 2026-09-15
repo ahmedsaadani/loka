@@ -103,7 +103,7 @@ export default async function HomePage() {
           {latest.length === 0 ? (
             <p className="text-muted-foreground">Aucun bien publié pour le moment.</p>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {latest.map((property, index) => (
                 <PropertyCard key={property.public_id} property={property} priority={index === 0} />
               ))}

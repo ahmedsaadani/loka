@@ -176,6 +176,8 @@ export interface PropertyCard {
   condition_grade: ConditionGrade;
   verified_at: string | null;
   distance_notes: Record<string, string>;
+  rating: string | null;
+  review_count: number;
 }
 
 export interface PropertyDetail extends PropertyCard {

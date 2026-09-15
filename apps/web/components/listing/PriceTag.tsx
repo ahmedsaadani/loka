@@ -1,11 +1,13 @@
+"use client";
+
 import type { PricingPlan, RentalMode } from "@/lib/api/types";
-import { cn, formatEur, formatTnd, RENTAL_MODE_LABEL } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
+import { cn, RENTAL_MODE_LABEL } from "@/lib/utils";
 
 interface Props {
   plans: PricingPlan[];
   preferredMode?: RentalMode | string;
   size?: "sm" | "lg";
-  showEur?: boolean;
   className?: string;
 }
 
@@ -24,7 +26,8 @@ export function pickPlan(plans: PricingPlan[], preferred?: string): PricingPlan 
   return active[0];
 }
 
-export function PriceTag({ plans, preferredMode, size = "sm", showEur = false, className }: Props) {
+export function PriceTag({ plans, preferredMode, size = "sm", className }: Props) {
+  const { format } = useCurrency();
   const plan = pickPlan(plans, preferredMode);
   if (!plan)
     return <span className={cn("text-sm text-muted-foreground", className)}>Prix sur demande</span>;
@@ -32,7 +35,7 @@ export function PriceTag({ plans, preferredMode, size = "sm", showEur = false, c
   return (
     <div className={cn("flex flex-col", className)}>
       <span className={cn("font-semibold", size === "lg" ? "text-2xl" : "text-base")}>
-        {formatTnd(plan.price)}
+        {format(plan.price)}
         <span className="text-sm font-normal text-muted-foreground">
           {" "}
           / {RENTAL_MODE_LABEL[plan.rental_mode]}
@@ -40,19 +43,16 @@ export function PriceTag({ plans, preferredMode, size = "sm", showEur = false, c
       </span>
       {plan.rental_mode === "yearly" && plan.monthly_equivalent && (
         <span className="text-xs text-muted-foreground">
-          soit {formatTnd(plan.monthly_equivalent)} / mois
+          soit {format(plan.monthly_equivalent)} / mois
         </span>
-      )}
-      {showEur && (
-        <span className="text-xs text-muted-foreground">≈ {formatEur(plan.price_eur)}</span>
       )}
       {others.length > 0 && size === "sm" && (
         <span className="text-xs text-muted-foreground">
           {others
             .map((p) =>
               p.rental_mode === "yearly" && p.monthly_equivalent
-                ? `${formatTnd(p.price)} / an (soit ${formatTnd(p.monthly_equivalent)} / mois)`
-                : `${formatTnd(p.price)} / ${RENTAL_MODE_LABEL[p.rental_mode]}`,
+                ? `${format(p.price)} / an (soit ${format(p.monthly_equivalent)} / mois)`
+                : `${format(p.price)} / ${RENTAL_MODE_LABEL[p.rental_mode]}`,
             )
             .join(" · ")}
         </span>

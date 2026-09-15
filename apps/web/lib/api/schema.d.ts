@@ -2209,6 +2209,12 @@ export interface components {
             readonly verified_at: string | null;
             /** @description {"ESPRIT": "8 min à pied", "Métro Ligne 2": "5 min"} */
             readonly distance_notes: unknown;
+            /**
+             * Format: decimal
+             * @description Note moyenne /5
+             */
+            readonly rating: string | null;
+            readonly review_count: number;
         };
         /** @description Pendant une revue de modifications, le public voit l'instantané publié (ADR 0007). */
         PropertyDetail: {
@@ -2240,6 +2246,12 @@ export interface components {
             readonly verified_at: string | null;
             /** @description {"ESPRIT": "8 min à pied", "Métro Ligne 2": "5 min"} */
             readonly distance_notes: unknown;
+            /**
+             * Format: decimal
+             * @description Note moyenne /5
+             */
+            readonly rating: string | null;
+            readonly review_count: number;
             readonly description: string;
             readonly floor: number | null;
             readonly has_elevator: boolean;
