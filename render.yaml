@@ -73,6 +73,11 @@ services:
         value: localhost,127.0.0.1
       - key: CELERY_TASK_ALWAYS_EAGER
         value: "1"
+      # Limites anti-spam assouplies pour ce déploiement de test (inscription, formulaire hôte).
+      - key: THROTTLE_REGISTER
+        value: 100/hour
+      - key: THROTTLE_OWNER_CONTACT
+        value: 100/hour
       - key: DATABASE_URL
         fromDatabase:
           name: loka-db
