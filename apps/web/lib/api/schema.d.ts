@@ -1370,6 +1370,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/messaging/conversations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Conversations de l'utilisateur courant (comme voyageur ou comme hôte). */
+        get: operations["messaging_conversations_list"];
+        put?: never;
+        /** @description Conversations de l'utilisateur courant (comme voyageur ou comme hôte). */
+        post: operations["messaging_conversations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messaging/conversations/{public_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Conversations de l'utilisateur courant (comme voyageur ou comme hôte). */
+        get: operations["messaging_conversations_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messaging/conversations/{public_id}/messages/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Conversations de l'utilisateur courant (comme voyageur ou comme hôte). */
+        post: operations["messaging_conversations_messages_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messaging/unread/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Nombre total de messages non lus (pastille de notification). */
+        get: operations["messaging_unread_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/stats/": {
         parameters: {
             query?: never;
@@ -1579,6 +1648,22 @@ export interface components {
          * @enum {string}
          */
         ConditionGradeEnum: "basic" | "good" | "excellent";
+        Conversation: {
+            /** Format: uuid */
+            readonly public_id: string;
+            readonly property: {
+                [key: string]: unknown;
+            };
+            readonly other_party: {
+                [key: string]: string;
+            };
+            readonly last_message: {
+                [key: string]: unknown;
+            } | null;
+            readonly unread_count: number;
+            /** Format: date-time */
+            readonly last_message_at: string | null;
+        };
         DeclineRequest: {
             /** @default  */
             reason: string;
@@ -1749,6 +1834,19 @@ export interface components {
             email: string;
             password: string;
         };
+        Message: {
+            /** Format: uuid */
+            readonly public_id: string;
+            readonly body: string;
+            readonly is_me: boolean;
+            /** Format: date-time */
+            readonly read_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        MessageWriteRequest: {
+            body: string;
+        };
         MockWebhookRequest: {
             provider_ref: string;
             outcome: components["schemas"]["OutcomeEnum"];
@@ -1867,6 +1965,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["CitySummary"][];
+        };
+        PaginatedConversationList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Conversation"][];
         };
         PaginatedIdentityDocumentList: {
             /** @example 123 */
@@ -2053,7 +2166,7 @@ export interface components {
         PatchedPropertyWriteRequest: {
             title?: string;
             description?: string;
-            property_type?: components["schemas"]["PropertyTypeB7fEnum"];
+            property_type?: components["schemas"]["PropertyTypeEnum"];
             /** @description S+1, S+2, ... */
             rooms_label?: string;
             bedrooms?: number;
@@ -2185,7 +2298,7 @@ export interface components {
             readonly public_id: string;
             readonly slug: string;
             readonly title: string;
-            readonly property_type: components["schemas"]["PropertyTypeB7fEnum"];
+            readonly property_type: components["schemas"]["PropertyTypeEnum"];
             /** @description S+1, S+2, ... */
             readonly rooms_label: string;
             readonly bedrooms: number;
@@ -2222,7 +2335,7 @@ export interface components {
             readonly public_id: string;
             readonly slug: string;
             readonly title: string;
-            readonly property_type: components["schemas"]["PropertyTypeB7fEnum"];
+            readonly property_type: components["schemas"]["PropertyTypeEnum"];
             /** @description S+1, S+2, ... */
             readonly rooms_label: string;
             readonly bedrooms: number;
@@ -2283,7 +2396,7 @@ export interface components {
             readonly slug: string;
             readonly title: string;
             readonly description: string;
-            readonly property_type: components["schemas"]["PropertyTypeB7fEnum"];
+            readonly property_type: components["schemas"]["PropertyTypeEnum"];
             /** @description S+1, S+2, ... */
             readonly rooms_label: string;
             readonly bedrooms: number;
@@ -2356,7 +2469,7 @@ export interface components {
             readonly slug: string;
             readonly title: string;
             readonly description: string;
-            readonly property_type: components["schemas"]["PropertyTypeB7fEnum"];
+            readonly property_type: components["schemas"]["PropertyTypeEnum"];
             /** @description S+1, S+2, ... */
             readonly rooms_label: string;
             readonly bedrooms: number;
@@ -2436,11 +2549,11 @@ export interface components {
          *     * `room_in_shared_flat` - Chambre en colocation
          * @enum {string}
          */
-        PropertyTypeB7fEnum: "studio" | "apartment" | "villa" | "room_in_shared_flat";
+        PropertyTypeEnum: "studio" | "apartment" | "villa" | "room_in_shared_flat";
         PropertyWrite: {
             title: string;
             description?: string;
-            property_type: components["schemas"]["PropertyTypeB7fEnum"];
+            property_type: components["schemas"]["PropertyTypeEnum"];
             /** @description S+1, S+2, ... */
             rooms_label?: string;
             bedrooms?: number;
@@ -2476,7 +2589,7 @@ export interface components {
         PropertyWriteRequest: {
             title: string;
             description?: string;
-            property_type: components["schemas"]["PropertyTypeB7fEnum"];
+            property_type: components["schemas"]["PropertyTypeEnum"];
             /** @description S+1, S+2, ... */
             rooms_label?: string;
             bedrooms?: number;
@@ -2584,11 +2697,18 @@ export interface components {
             url: string;
             expires_in: number;
         };
+        StartConversationRequest: {
+            property: string;
+            body: string;
+        };
         UnavailableRange: {
             /** Format: date */
             start: string;
             /** Format: date */
             end: string;
+        };
+        UnreadCount: {
+            count: number;
         };
         User: {
             /** Format: uuid */
@@ -4887,6 +5007,124 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PropertyStaff"];
+                };
+            };
+        };
+    };
+    messaging_conversations_list: {
+        parameters: {
+            query?: {
+                /** @description Quel champ utiliser pour classer les résultats. */
+                ordering?: string;
+                /** @description Un numéro de page de l'ensemble des résultats. */
+                page?: number;
+                /** @description Nombre de résultats à retourner par page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedConversationList"];
+                };
+            };
+        };
+    };
+    messaging_conversations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartConversationRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["StartConversationRequest"];
+                "multipart/form-data": components["schemas"]["StartConversationRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+        };
+    };
+    messaging_conversations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+        };
+    };
+    messaging_conversations_messages_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["MessageWriteRequest"];
+                "multipart/form-data": components["schemas"]["MessageWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    messaging_unread_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCount"][];
                 };
             };
         };

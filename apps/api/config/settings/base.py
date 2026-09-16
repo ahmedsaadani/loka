@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "leads",
     "reviews",
     "notifications",
+    "messaging",
 ]
 
 MIDDLEWARE = [
@@ -252,6 +253,7 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "ENUM_NAME_OVERRIDES": {
         "PropertyStatusEnum": "listings.models.PropertyStatus.choices",
+        "PropertyTypeEnum": "listings.models.PropertyType.choices",
         "BookingRequestStatusEnum": "bookings.models.BookingRequestStatus.choices",
         "BookingStatusEnum": "bookings.models.BookingStatus.choices",
         "LeadStatusEnum": "leads.models.LeadStatus.choices",

@@ -21,6 +21,7 @@ import { ConditionBadge } from "@/components/listing/ConditionBadge";
 import { Gallery } from "@/components/listing/Gallery";
 import { MobileBookingBar } from "@/components/listing/MobileBookingBar";
 import { PropertyMapLazy } from "@/components/listing/PropertyMapLazy";
+import { ContactHostButton } from "@/components/listing/ContactHostButton";
 import { ShareButton } from "@/components/listing/ShareButton";
 import { PricingTabs } from "@/components/listing/PricingTabs";
 import { PropertyCard } from "@/components/listing/PropertyCard";
@@ -132,7 +133,10 @@ export default async function PropertyPage({ params }: { params: Promise<Params>
                 />
                 <ConditionBadge grade={property.condition_grade} />
               </div>
-              <ShareButton title={property.title} />
+              <div className="flex items-center gap-1">
+                <ContactHostButton slug={property.slug} />
+                <ShareButton title={property.title} />
+              </div>
             </div>
             <h1 className="mt-3 text-2xl md:text-4xl">{property.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">

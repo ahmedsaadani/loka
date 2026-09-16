@@ -406,3 +406,37 @@ export interface Lead {
   created_at: string;
   updated_at: string;
 }
+
+export interface ConversationParty {
+  name: string;
+  role: string;
+}
+export interface ConversationProperty {
+  slug: string;
+  title: string;
+  city: string;
+  cover: string | null;
+}
+export interface ConversationLastMessage {
+  body: string;
+  is_me: boolean;
+  created_at: string;
+}
+export interface Conversation {
+  public_id: string;
+  property: ConversationProperty;
+  other_party: ConversationParty;
+  last_message: ConversationLastMessage | null;
+  unread_count: number;
+  last_message_at: string | null;
+}
+export interface Message {
+  public_id: string;
+  body: string;
+  is_me: boolean;
+  read_at: string | null;
+  created_at: string;
+}
+export interface ConversationDetail extends Conversation {
+  messages: Message[];
+}

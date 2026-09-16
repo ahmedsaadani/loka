@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { CurrencySwitcher } from "@/components/layout/CurrencySwitcher";
+import { NotificationBell } from "@/components/messaging/NotificationBell";
 import { Logo } from "@/components/layout/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,6 +65,7 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <NotificationBell />
           <Button variant="ghost" size="icon" asChild aria-label="Mes favoris">
             <Link href="/favoris">
               <Heart className="h-5 w-5" />
