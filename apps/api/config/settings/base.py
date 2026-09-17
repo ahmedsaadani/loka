@@ -277,6 +277,9 @@ JWT_COOKIE_SAMESITE = env("JWT_COOKIE_SAMESITE", "Lax")
 
 # Connexion Google (jeton d'identité GIS vérifié par accounts.services.google_sign_in).
 GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", "")
+# Connexion Facebook (jeton d'accès vérifié par accounts.services.facebook_sign_in via Graph API).
+FACEBOOK_APP_ID = env("FACEBOOK_APP_ID", "")
+FACEBOOK_APP_SECRET = env("FACEBOOK_APP_SECRET", "")
 JWT_COOKIE_PATH = "/api/v1/auth/"
 
 # ------------------------------------------------------------------ CORS / CSRF

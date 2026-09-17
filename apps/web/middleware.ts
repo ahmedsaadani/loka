@@ -36,10 +36,10 @@ function buildCsp(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: ${s3Origin} https://*.amazonaws.com ${mapHosts}`,
     "font-src 'self' data:",
-    `connect-src 'self' ${apiOrigin} ${mapHosts} https://accounts.google.com${sentryOrigin ? ` ${sentryOrigin}` : ""}`,
+    `connect-src 'self' ${apiOrigin} ${mapHosts} https://accounts.google.com https://graph.facebook.com https://www.facebook.com${sentryOrigin ? ` ${sentryOrigin}` : ""}`,
     "worker-src 'self' blob:",
-    // Fenêtre de connexion Google (Google Identity Services).
-    "frame-src 'self' https://accounts.google.com",
+    // Fenêtres de connexion sociale (Google Identity Services, SDK Facebook).
+    "frame-src 'self' https://accounts.google.com https://www.facebook.com https://web.facebook.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

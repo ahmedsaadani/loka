@@ -76,6 +76,11 @@ services:
       # Connexion Google (Client ID public).
       - key: GOOGLE_CLIENT_ID
         value: 1076055049293-5i2r9n2bgm39g65euaa3q4glgpho22ik.apps.googleusercontent.com
+      # Connexion Facebook (App ID public ; l'App Secret est saisi à la main, sync: false).
+      - key: FACEBOOK_APP_ID
+        value: "1070070768956722"
+      - key: FACEBOOK_APP_SECRET
+        sync: false
       # Front et API sur deux sous-domaines : le cookie de session doit être SameSite=None
       # (+ Secure, déjà activé en prod) pour être accepté d'un domaine à l'autre.
       - key: JWT_COOKIE_SAMESITE
@@ -154,3 +159,5 @@ services:
         value: "1"
       - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
         value: 1076055049293-5i2r9n2bgm39g65euaa3q4glgpho22ik.apps.googleusercontent.com
+      - key: NEXT_PUBLIC_FACEBOOK_APP_ID
+        value: "1070070768956722"

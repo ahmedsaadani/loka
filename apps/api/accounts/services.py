@@ -191,3 +191,63 @@ def google_sign_in(credential: str) -> User:
             last_name=payload.get("family_name", "")[:80],
         )
     return user
+
+
+def _fetch_facebook_payload(access_token: str) -> dict[str, Any]:
+    """Vérifie un jeton d'accès Facebook puis lit le profil via l'API Graph.
+
+    Deux appels : `debug_token` (le jeton appartient bien à notre app et est valide),
+    puis `/me` pour l'email et le nom. Isolé pour être remplaçable en test.
+    Lève ValidationError si le jeton est invalide ou destiné à une autre application.
+    """
+    import json
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    app_id = settings.FACEBOOK_APP_ID
+    app_token = f"{app_id}|{settings.FACEBOOK_APP_SECRET}"
+
+    def _get(url: str) -> dict[str, Any]:
+        with urllib.request.urlopen(url, timeout=10) as resp:  # noqa: S310 - https Facebook
+            data: dict[str, Any] = json.loads(resp.read())
+            return data
+
+    try:
+        debug_url = "https://graph.facebook.com/debug_token?" + urllib.parse.urlencode(
+            {"input_token": access_token, "access_token": app_token}
+        )
+        debug = _get(debug_url).get("data", {})
+        if not debug.get("is_valid") or str(debug.get("app_id")) != str(app_id):
+            raise DjangoValidationError(
+                "Jeton Facebook invalide ou destiné à une autre application."
+            )
+        me_url = "https://graph.facebook.com/me?" + urllib.parse.urlencode(
+            {"fields": "email,first_name,last_name", "access_token": access_token}
+        )
+        return _get(me_url)
+    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        raise DjangoValidationError("Jeton Facebook invalide.") from exc
+
+
+def facebook_sign_in(access_token: str) -> User:
+    """Connexion / création de compte via Facebook (jeton d'accès du SDK JavaScript)."""
+    if not (settings.FACEBOOK_APP_ID and settings.FACEBOOK_APP_SECRET):
+        raise DjangoValidationError("Connexion Facebook non configurée.")
+    payload = _fetch_facebook_payload(access_token)
+    email = (payload.get("email") or "").lower().strip()
+    if not email:
+        raise DjangoValidationError(
+            "Aucune adresse email associée à ce compte Facebook. "
+            "Utilisez un autre mode de connexion."
+        )
+    user = User.objects.filter(email=email).first()
+    if user is None:
+        user = User.objects.create_user(
+            email=email,
+            password=None,
+            role=Role.TRAVELER,
+            first_name=payload.get("first_name", "")[:80],
+            last_name=payload.get("last_name", "")[:80],
+        )
+    return user

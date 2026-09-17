@@ -130,3 +130,7 @@ class SignedUrlSerializer(serializers.Serializer[Any]):
 
 class GoogleLoginSerializer(serializers.Serializer[dict[str, str]]):
     credential = serializers.CharField()
+
+
+class FacebookLoginSerializer(serializers.Serializer[dict[str, str]]):
+    access_token = serializers.CharField()

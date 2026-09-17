@@ -25,6 +25,7 @@ from accounts import services
 from accounts.models import IdentityDocument, IdentityDocumentStatus, User
 from accounts.serializers import (
     AccessTokenSerializer,
+    FacebookLoginSerializer,
     GoogleLoginSerializer,
     IdentityDocumentSerializer,
     IdentityDocumentStaffSerializer,
@@ -105,6 +106,21 @@ class GoogleLoginView(APIView):
         serializer = GoogleLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = services.google_sign_in(serializer.validated_data["credential"])
+        return _token_response(user)
+
+
+class FacebookLoginView(APIView):
+    """Connexion / création de compte via Facebook (jeton d'accès du SDK JavaScript)."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
+
+    @extend_schema(request=FacebookLoginSerializer, responses={200: AccessTokenSerializer})
+    def post(self, request: Request) -> Response:
+        serializer = FacebookLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = services.facebook_sign_in(serializer.validated_data["access_token"])
         return _token_response(user)
 
 

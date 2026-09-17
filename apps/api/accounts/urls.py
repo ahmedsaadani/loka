@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import SimpleRouter
 
 from accounts.views import (
+    FacebookLoginView,
     GoogleLoginView,
     IdentityDocumentViewSet,
     LoginView,
@@ -21,6 +22,7 @@ urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
     path("google/", GoogleLoginView.as_view(), name="google-login"),
+    path("facebook/", FacebookLoginView.as_view(), name="facebook-login"),
     path("refresh/", RefreshView.as_view(), name="refresh"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("me/", MeView.as_view(), name="me"),

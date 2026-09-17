@@ -19,6 +19,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User>;
   loginWithGoogle: (credential: string) => Promise<User>;
+  loginWithFacebook: (accessToken: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   hasRole: (...roles: Role[]) => boolean;
@@ -90,6 +91,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.user;
   }, []);
 
+  const loginWithFacebook = useCallback(async (accessToken: string) => {
+    const data = await api.post<AuthResponse>("/auth/facebook/", { access_token: accessToken });
+    setAccessToken(data.access);
+    setUser(data.user);
+    setStatus("authenticated");
+    return data.user;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout/");
@@ -113,11 +122,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       loginWithGoogle,
+      loginWithFacebook,
       logout,
       refreshUser: loadUser,
       hasRole,
     }),
-    [user, status, login, register, loginWithGoogle, logout, loadUser, hasRole],
+    [user, status, login, register, loginWithGoogle, loginWithFacebook, logout, loadUser, hasRole],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
