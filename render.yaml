@@ -73,6 +73,9 @@ services:
         value: localhost,127.0.0.1
       - key: CELERY_TASK_ALWAYS_EAGER
         value: "1"
+      # Connexion Google (Client ID public).
+      - key: GOOGLE_CLIENT_ID
+        value: 1076055049293-5i2r9n2bgm39g65euaa3q4glgpho22ik.apps.googleusercontent.com
       # Front et API sur deux sous-domaines : le cookie de session doit être SameSite=None
       # (+ Secure, déjà activé en prod) pour être accepté d'un domaine à l'autre.
       - key: JWT_COOKIE_SAMESITE
@@ -149,3 +152,5 @@ services:
       # Fond de carte OpenStreetMap (aucune clé MapTiler nécessaire pour ce test).
       - key: NEXT_PUBLIC_MAP_FALLBACK_OSM
         value: "1"
+      - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+        value: 1076055049293-5i2r9n2bgm39g65euaa3q4glgpho22ik.apps.googleusercontent.com

@@ -274,6 +274,9 @@ SIMPLE_JWT = {
 JWT_REFRESH_COOKIE_NAME = env("JWT_REFRESH_COOKIE_NAME", "loka_refresh")
 JWT_COOKIE_SECURE = env_bool("JWT_COOKIE_SECURE", False)
 JWT_COOKIE_SAMESITE = env("JWT_COOKIE_SAMESITE", "Lax")
+
+# Connexion Google (jeton d'identité GIS vérifié par accounts.services.google_sign_in).
+GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", "")
 JWT_COOKIE_PATH = "/api/v1/auth/"
 
 # ------------------------------------------------------------------ CORS / CSRF

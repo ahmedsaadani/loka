@@ -126,3 +126,7 @@ class PasswordChangeSerializer(serializers.Serializer[Any]):
 class SignedUrlSerializer(serializers.Serializer[Any]):
     url = serializers.URLField()
     expires_in = serializers.IntegerField()
+
+
+class GoogleLoginSerializer(serializers.Serializer[dict[str, str]]):
+    credential = serializers.CharField()

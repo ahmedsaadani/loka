@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
+from django.conf import settings
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.utils import timezone
@@ -141,3 +144,50 @@ def reject_identity_document(
         extra_fields={"reviewed_by": by, "reviewed_at": timezone.now(), "rejection_reason": reason},
     )
     return document
+
+
+def _fetch_google_payload(credential: str) -> dict[str, Any]:
+    """Vérifie un jeton d'identité Google via l'endpoint officiel `tokeninfo`.
+
+    Isolé pour être remplaçable en test. Lève ValidationError si le jeton est invalide.
+    """
+    import json
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    url = "https://oauth2.googleapis.com/tokeninfo?" + urllib.parse.urlencode(
+        {"id_token": credential}
+    )
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:  # noqa: S310 - https Google
+            data: dict[str, Any] = json.loads(resp.read())
+            return data
+    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        raise DjangoValidationError("Jeton Google invalide.") from exc
+
+
+def google_sign_in(credential: str) -> User:
+    """Connexion / création de compte via Google (jeton d'identité GIS)."""
+    if not settings.GOOGLE_CLIENT_ID:
+        raise DjangoValidationError("Connexion Google non configurée.")
+    payload = _fetch_google_payload(credential)
+    if payload.get("aud") != settings.GOOGLE_CLIENT_ID:
+        raise DjangoValidationError("Jeton Google destiné à une autre application.")
+    if payload.get("iss") not in {"accounts.google.com", "https://accounts.google.com"}:
+        raise DjangoValidationError("Émetteur du jeton Google inattendu.")
+    if str(payload.get("email_verified")).lower() not in {"true", "1"}:
+        raise DjangoValidationError("Adresse Google non vérifiée.")
+    email = (payload.get("email") or "").lower().strip()
+    if not email:
+        raise DjangoValidationError("Jeton Google sans adresse email.")
+    user = User.objects.filter(email=email).first()
+    if user is None:
+        user = User.objects.create_user(
+            email=email,
+            password=None,
+            role=Role.TRAVELER,
+            first_name=payload.get("given_name", "")[:80],
+            last_name=payload.get("family_name", "")[:80],
+        )
+    return user

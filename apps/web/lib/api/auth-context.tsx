@@ -18,6 +18,7 @@ interface AuthContextValue {
   status: "loading" | "anonymous" | "authenticated";
   login: (email: string, password: string) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User>;
+  loginWithGoogle: (credential: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   hasRole: (...roles: Role[]) => boolean;
@@ -81,6 +82,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.user;
   }, []);
 
+  const loginWithGoogle = useCallback(async (credential: string) => {
+    const data = await api.post<AuthResponse>("/auth/google/", { credential });
+    setAccessToken(data.access);
+    setUser(data.user);
+    setStatus("authenticated");
+    return data.user;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout/");
@@ -98,8 +107,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, status, login, register, logout, refreshUser: loadUser, hasRole }),
-    [user, status, login, register, logout, loadUser, hasRole],
+    () => ({
+      user,
+      status,
+      login,
+      register,
+      loginWithGoogle,
+      logout,
+      refreshUser: loadUser,
+      hasRole,
+    }),
+    [user, status, login, register, loginWithGoogle, logout, loadUser, hasRole],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

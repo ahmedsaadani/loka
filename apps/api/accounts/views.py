@@ -25,6 +25,7 @@ from accounts import services
 from accounts.models import IdentityDocument, IdentityDocumentStatus, User
 from accounts.serializers import (
     AccessTokenSerializer,
+    GoogleLoginSerializer,
     IdentityDocumentSerializer,
     IdentityDocumentStaffSerializer,
     IdentityDocumentUploadSerializer,
@@ -90,6 +91,21 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         user = services.register_user(**serializer.validated_data)
         return _token_response(user, status.HTTP_201_CREATED)
+
+
+class GoogleLoginView(APIView):
+    """Connexion / création de compte via Google (jeton d'identité GIS)."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
+
+    @extend_schema(request=GoogleLoginSerializer, responses={200: AccessTokenSerializer})
+    def post(self, request: Request) -> Response:
+        serializer = GoogleLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = services.google_sign_in(serializer.validated_data["credential"])
+        return _token_response(user)
 
 
 class LoginView(APIView):

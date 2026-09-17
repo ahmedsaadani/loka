@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiRequestError } from "@/lib/api/client";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { useAuth } from "@/lib/api/auth-context";
 import { t } from "@/lib/i18n";
 
@@ -159,6 +160,10 @@ export function RegisterForm({ role, next }: Props) {
           {t.auth.loginTitle}
         </Link>
       </p>
+      <div className="flex items-center gap-3 py-1 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" /> ou <span className="h-px flex-1 bg-border" />
+      </div>
+      <GoogleButton />
     </form>
   );
 }
