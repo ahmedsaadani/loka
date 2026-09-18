@@ -5,6 +5,7 @@ export const metadata = { title: "Espace propriétaire", robots: { index: false,
 
 const NAV = [
   { href: "/hote", label: "Tableau de bord", exact: true },
+  { href: "/hote/statistiques", label: "Statistiques" },
   { href: "/hote/biens", label: "Mes biens" },
   { href: "/hote/demandes", label: "Demandes" },
   { href: "/hote/reservations", label: "Réservations" },

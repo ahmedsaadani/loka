@@ -21,6 +21,7 @@ import { ConditionBadge } from "@/components/listing/ConditionBadge";
 import { Gallery } from "@/components/listing/Gallery";
 import { MobileBookingBar } from "@/components/listing/MobileBookingBar";
 import { PropertyMapLazy } from "@/components/listing/PropertyMapLazy";
+import { PropertyReviews } from "@/components/listing/PropertyReviews";
 import { ContactHostButton } from "@/components/listing/ContactHostButton";
 import { ShareButton } from "@/components/listing/ShareButton";
 import { PricingTabs } from "@/components/listing/PricingTabs";
@@ -327,6 +328,12 @@ export default async function PropertyPage({ params }: { params: Promise<Params>
             </h2>
             <AvailabilityCalendar slug={property.slug} />
           </section>
+
+          <PropertyReviews
+            slug={property.slug}
+            rating={property.rating}
+            reviewCount={property.review_count}
+          />
 
           <Separator />
 

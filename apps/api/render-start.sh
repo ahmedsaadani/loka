@@ -18,4 +18,8 @@ if [ "$(python -c 'import django; django.setup(); from listings.models import Pr
   python manage.py seed --photo-mode static || echo "seed échoué, on continue."
 fi
 
+# Avis de démonstration : idempotent (ignore les biens qui en ont déjà). Ajoute des avis
+# aux biens publiés sur les bases déjà peuplées où `seed` ne se relance pas.
+python manage.py backfill_reviews || echo "backfill_reviews échoué, on continue."
+
 exec gunicorn config.wsgi:application --bind "0.0.0.0:${PORT:-10000}" --workers 1 --timeout 120

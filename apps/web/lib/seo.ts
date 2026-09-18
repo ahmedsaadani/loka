@@ -79,6 +79,17 @@ export function accommodationJsonLd(property: PropertyDetail): Record<string, un
       ? { "@type": "QuantitativeValue", value: property.surface_m2, unitCode: "MTK" }
       : undefined,
     occupancy: { "@type": "QuantitativeValue", maxValue: property.max_guests },
+    // Étoiles dans les résultats Google : uniquement si des avis réels existent.
+    aggregateRating:
+      property.rating && property.review_count > 0
+        ? {
+            "@type": "AggregateRating",
+            ratingValue: Number(property.rating),
+            reviewCount: property.review_count,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        : undefined,
     address: {
       "@type": "PostalAddress",
       addressLocality: property.city.name,

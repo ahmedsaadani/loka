@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
+from bookings.host_stats import HostStatsView
 from bookings.views import (
     HostBookingViewSet,
     HostRequestViewSet,
@@ -25,5 +26,6 @@ urlpatterns = [
     path("webhooks/mock/", MockPaymentWebhookView.as_view(), name="mock-webhook"),
     path("webhooks/konnect/", KonnectPaymentWebhookView.as_view(), name="konnect-webhook"),
     path("mock/sign/<str:provider_ref>/", MockPaymentSignView.as_view(), name="mock-sign"),
+    path("host/stats/", HostStatsView.as_view(), name="host-stats"),
     *router.urls,
 ]

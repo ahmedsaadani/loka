@@ -440,3 +440,37 @@ export interface Message {
 export interface ConversationDetail extends Conversation {
   messages: Message[];
 }
+
+export interface Review {
+  public_id: string;
+  rating: number;
+  comment: string;
+  author_name: string;
+  created_at: string;
+}
+export interface MyReview extends Review {
+  property_title: string;
+  property_slug: string;
+}
+export interface ReviewableBooking {
+  booking: string;
+  property_title: string;
+  property_slug: string;
+  city: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface HostStats {
+  properties_total: number;
+  properties_published: number;
+  requests_total: number;
+  requests_pending: number;
+  acceptance_rate: number | null;
+  response_rate: number | null;
+  bookings_active: number;
+  bookings_completed: number;
+  revenue_completed: string;
+  average_rating: number | null;
+  reviews_total: number;
+}

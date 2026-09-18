@@ -7,6 +7,7 @@ const NAV = [
   { href: "/compte", label: "Mon profil", exact: true },
   { href: "/compte/demandes", label: "Mes demandes" },
   { href: "/compte/reservations", label: "Mes réservations" },
+  { href: "/compte/avis", label: "Mes avis" },
   { href: "/compte/identite", label: "Identité" },
 ];
 

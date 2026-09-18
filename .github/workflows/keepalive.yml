@@ -1,0 +1,32 @@
+# Maintient éveillés les services gratuits Render (ils se mettent en veille après ~15 min
+# d'inactivité, avec un réveil à froid de ~50 s). Ce cron les « ping » régulièrement pour
+# que le site reste réactif pendant la phase de test.
+#
+# Remarques :
+#  - GitHub planifie les crons « au mieux » : l'intervalle réel peut varier de quelques minutes.
+#  - GitHub désactive un cron après 60 jours sans activité sur le dépôt (le réactiver suffit).
+#  - Purement pour le déploiement de test gratuit ; à retirer une fois sur un serveur dédié.
+name: keep-alive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # toutes les 10 minutes
+  workflow_dispatch: {} # déclenchement manuel possible
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API health + front
+        run: |
+          set +e
+          for url in \
+            "https://loka-api-qhix.onrender.com/api/v1/health/" \
+            "https://loka-web.onrender.com/"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$url")
+            echo "$url -> $code"
+          done
+          exit 0

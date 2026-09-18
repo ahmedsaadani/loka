@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { serverApi } from "@/lib/api/client";
 import type { CitySummary, Paginated, PropertyCard as PropertyCardData } from "@/lib/api/types";
 import { t } from "@/lib/i18n";
-import { pageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/JsonLd";
+import { organizationJsonLd, pageMetadata } from "@/lib/seo";
 import { formatTnd } from "@/lib/utils";
 
 // CSP par nonce (ADR 0009) : rendu à la demande ; les appels API restent en cache (revalidate).
@@ -87,6 +88,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={[organizationJsonLd()]} />
       {/* Hero photographique */}
       <section className="relative isolate overflow-hidden">
         <Image

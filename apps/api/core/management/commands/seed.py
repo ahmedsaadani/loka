@@ -33,6 +33,7 @@ from django.utils import timezone
 from slugify import slugify
 
 from accounts.models import HostProfile, Role, User
+from bookings.models import Booking, BookingRequest
 from core.seed_catalog import AMENITIES, GEO, PHOTO_ALT, PHOTO_PLANS, PROPERTIES, SeedProperty
 from core.storages import public_storage
 from geo.models import City, Governorate, Neighborhood
@@ -47,6 +48,7 @@ from listings.models import (
     PropertyStatus,
     RentalMode,
 )
+from reviews.seeding import ensure_reviewers, seed_reviews_for_property
 
 SEED_TAG = "[seed]"
 PHOTOS_DIR = Path(settings.BASE_DIR) / "seed" / "photos"
@@ -138,12 +140,6 @@ class PhotoBank:
         return files[self.cursor[category] % len(files)]
 
 
-def _seed_rating(rng: random.Random, grade: str) -> Decimal:
-    """Note moyenne réaliste, un peu plus haute pour les biens en meilleur état."""
-    base = {"basic": 4.0, "good": 4.4, "excellent": 4.7}.get(grade, 4.4)
-    return Decimal(str(round(min(5.0, base + rng.uniform(-0.3, 0.3)), 1)))
-
-
 class Command(BaseCommand):
     help = "Charge les données de démonstration Loka."
 
@@ -184,6 +180,7 @@ class Command(BaseCommand):
             self._seed_leads(users["staff@loka.tn"])
             self._seed_site_content()
         host = users["host@loka.tn"]
+        reviewers = ensure_reviewers()
         if options["reset"]:
             self._reset_properties(host)
         mode = "none" if options["no_photos"] else options["photo_mode"]
@@ -192,7 +189,7 @@ class Command(BaseCommand):
         catalog = PROPERTIES[:limit] if limit else PROPERTIES
         created = 0
         for index, spec in enumerate(catalog):
-            if self._create_property(index, spec, rng, host, amenities, bank, mode):
+            if self._create_property(index, spec, rng, host, amenities, bank, mode, reviewers):
                 created += 1
         if mode == "pipeline" and options["wait_variants"]:
             self._wait_for_variants(host, options["wait_variants"])
@@ -318,6 +315,10 @@ class Command(BaseCommand):
                     if storage.exists(key):
                         storage.delete(key)
                 photo.original.delete(save=False)
+            # Réservations + avis de démonstration : les retirer d'abord (les avis sont
+            # supprimés en cascade) pour que le bien puisse être effacé proprement.
+            Booking.objects.filter(property=prop).delete()
+            BookingRequest.objects.filter(property=prop).delete()
             try:
                 with transaction.atomic():
                     prop.delete()
@@ -354,6 +355,7 @@ class Command(BaseCommand):
         amenities: dict[str, Amenity],
         bank: PhotoBank | None,
         photo_mode: str = "pipeline",
+        reviewers: list[User] | None = None,
     ) -> bool:
         tag = f"{SEED_TAG} {spec['key']}"
         if Property.objects.filter(host=host, verification_notes=tag).exists():
@@ -396,8 +398,6 @@ class Command(BaseCommand):
                 distance_notes=spec["distances"],
                 house_rules=spec["rules"],
                 published_at=timezone.now() - timedelta(days=rng.randrange(1, 60), hours=index),
-                rating=_seed_rating(rng, spec["grade"]),
-                review_count=rng.randrange(4, 90),
             )
             prop.amenities.set([amenities[code] for code in spec["amenities"]])
             if spec["monthly"] is not None:
@@ -422,6 +422,8 @@ class Command(BaseCommand):
                 )
             if bank is not None:
                 self._attach_photos(prop, spec, bank, index, photo_mode)
+            if reviewers:
+                seed_reviews_for_property(prop, rng, reviewers)
         self.stdout.write(f"  + {prop.title}")
         return True
 
