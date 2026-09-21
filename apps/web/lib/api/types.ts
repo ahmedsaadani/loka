@@ -461,6 +461,18 @@ export interface ReviewableBooking {
   end_date: string;
 }
 
+export interface StaffReview {
+  public_id: string;
+  rating: number;
+  comment: string;
+  author_name: string;
+  author_email: string;
+  property_title: string;
+  property_slug: string;
+  is_published: boolean;
+  created_at: string;
+}
+
 export interface HostStats {
   properties_total: number;
   properties_published: number;

@@ -13,6 +13,7 @@ pytestmark = pytest.mark.django_db
 LIST_URL = reverse("v1:review-list")
 PENDING_URL = reverse("v1:review-pending")
 MINE_URL = reverse("v1:review-mine")
+STAFF_LIST_URL = reverse("v1:staff-review-list")
 
 
 def _completed_booking(**over):
@@ -89,6 +90,39 @@ class TestReviewListing:
         assert res.status_code == 200
         assert len(res.data) == 1
         assert res.data[0]["property_title"] == booking.property.title
+
+
+class TestStaffModeration:
+    def _reviewed(self, as_user):
+        booking = _completed_booking()
+        as_user(booking.traveler).post(
+            LIST_URL, {"booking": str(booking.public_id), "rating": 5, "comment": "Nickel."}
+        )
+        return booking
+
+    def test_non_staff_forbidden(self, as_user, traveler):
+        assert as_user(traveler).get(STAFF_LIST_URL).status_code == 403
+
+    def test_staff_lists_all_reviews(self, as_user, staff):
+        self._reviewed(as_user)
+        res = as_user(staff).get(STAFF_LIST_URL)
+        assert res.status_code == 200
+        assert res.data["count"] == 1
+        assert res.data["results"][0]["is_published"] is True
+        assert "author_email" in res.data["results"][0]
+
+    def test_staff_hides_review_and_updates_rating(self, as_user, staff):
+        booking = self._reviewed(as_user)
+        review = Review.objects.get(booking=booking)
+        booking.property.refresh_from_db()
+        assert booking.property.review_count == 1
+        url = reverse("v1:staff-review-set-visibility", args=[review.public_id])
+        res = as_user(staff).post(url, {"is_published": False})
+        assert res.status_code == 200
+        assert res.data["is_published"] is False
+        booking.property.refresh_from_db()
+        assert booking.property.review_count == 0
+        assert booking.property.rating is None
 
 
 class TestRatingAggregation:

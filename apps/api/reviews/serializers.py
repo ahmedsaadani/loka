@@ -56,3 +56,35 @@ class MyReviewSerializer(ReviewSerializer):
     class Meta(ReviewSerializer.Meta):
         fields = (*ReviewSerializer.Meta.fields, "property_title", "property_slug")
         read_only_fields = fields
+
+
+class StaffReviewSerializer(serializers.ModelSerializer[Review]):
+    """Avis vu par l'équipe : nom complet de l'auteur + statut de publication."""
+
+    author_name = serializers.SerializerMethodField()
+    author_email = serializers.EmailField(source="author.email", read_only=True)
+    property_title = serializers.CharField(source="booking.property.title", read_only=True)
+    property_slug = serializers.CharField(source="booking.property.slug", read_only=True)
+
+    class Meta:
+        model = Review
+        fields = (
+            "public_id",
+            "rating",
+            "comment",
+            "author_name",
+            "author_email",
+            "property_title",
+            "property_slug",
+            "is_published",
+            "created_at",
+        )
+        read_only_fields = fields
+
+    def get_author_name(self, obj: Review) -> str:
+        full = f"{obj.author.first_name} {obj.author.last_name}".strip()
+        return full or obj.author.email
+
+
+class SetVisibilitySerializer(serializers.Serializer[dict[str, Any]]):
+    is_published = serializers.BooleanField()

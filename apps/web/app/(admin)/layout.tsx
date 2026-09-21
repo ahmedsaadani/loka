@@ -8,6 +8,7 @@ const NAV = [
   { href: "/admin/validation", label: "Validation des biens" },
   { href: "/admin/reservations", label: "Réservations" },
   { href: "/admin/identites", label: "Identités" },
+  { href: "/admin/avis", label: "Avis" },
   { href: "/admin/leads", label: "Leads" },
 ];
 

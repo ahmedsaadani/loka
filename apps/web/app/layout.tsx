@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
 
+import { Analytics } from "@/components/Analytics";
 import { AuthProvider } from "@/lib/api/auth-context";
 import { CurrencyProvider } from "@/lib/currency";
 import { FavoritesProvider } from "@/lib/favorites";
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" dir="ltr">
       <body className="min-h-dvh">
+        <Analytics />
         <AuthProvider>
           <CurrencyProvider>
             <FavoritesProvider>

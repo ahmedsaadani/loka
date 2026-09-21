@@ -13,6 +13,7 @@ from rest_framework.response import Response
 
 from bookings.models import Booking, BookingStatus
 from core.auth import current_user
+from core.permissions import IsStaff
 from reviews import services
 from reviews.models import Review
 from reviews.serializers import (
@@ -20,6 +21,8 @@ from reviews.serializers import (
     ReviewableBookingSerializer,
     ReviewCreateSerializer,
     ReviewSerializer,
+    SetVisibilitySerializer,
+    StaffReviewSerializer,
 )
 
 
@@ -89,3 +92,31 @@ class ReviewViewSet(mixins.ListModelMixin, viewsets.GenericViewSet[Review]):
             .order_by("-created_at")
         )
         return Response(MyReviewSerializer(reviews, many=True).data)
+
+
+class StaffReviewViewSet(mixins.ListModelMixin, viewsets.GenericViewSet[Review]):
+    """Modération des avis par l'équipe : liste et masquage/republication."""
+
+    permission_classes = [IsAuthenticated, IsStaff]
+    serializer_class = StaffReviewSerializer
+    lookup_field = "public_id"
+
+    def get_queryset(self) -> QuerySet[Review]:
+        if getattr(self, "swagger_fake_view", False):
+            return Review.objects.none()
+        qs = Review.objects.select_related("author", "booking__property").order_by("-created_at")
+        published = self.request.query_params.get("published")
+        if published in {"true", "false"}:
+            qs = qs.filter(is_published=published == "true")
+        return qs
+
+    @extend_schema(request=SetVisibilitySerializer, responses={200: StaffReviewSerializer})
+    @action(detail=True, methods=["post"], url_path="visibility")
+    def set_visibility(self, request: Request, public_id: str | None = None) -> Response:
+        review = self.get_object()
+        serializer = SetVisibilitySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        review.is_published = serializer.validated_data["is_published"]
+        review.save(update_fields=["is_published", "updated_at"])
+        services.recompute_property_rating(review.booking.property)
+        return Response(StaffReviewSerializer(review).data)

@@ -90,6 +90,9 @@ services:
         value: 100/hour
       - key: THROTTLE_OWNER_CONTACT
         value: 100/hour
+      # Surveillance des erreurs (optionnel) : coller le DSN du projet Sentry pour l'activer.
+      - key: SENTRY_DSN
+        sync: false
       - key: DATABASE_URL
         fromDatabase:
           name: loka-db
@@ -161,3 +164,9 @@ services:
         value: 1076055049293-5i2r9n2bgm39g65euaa3q4glgpho22ik.apps.googleusercontent.com
       - key: NEXT_PUBLIC_FACEBOOK_APP_ID
         value: "1070070768956722"
+      # Mesure d'audience Plausible (optionnel) : mettre le domaine suivi, ex. loka-web.onrender.com
+      - key: NEXT_PUBLIC_PLAUSIBLE_DOMAIN
+        sync: false
+      # Surveillance des erreurs navigateur (optionnel) : coller le DSN Sentry pour l'activer.
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        sync: false
